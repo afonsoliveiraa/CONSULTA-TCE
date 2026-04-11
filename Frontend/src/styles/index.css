@@ -1,0 +1,7 @@
+/* Ponto de entrada dos estilos, mantendo os modulos separados por responsabilidade. */
+
+@import "./base.css";
+@import "./layout.css";
+@import "./grid.css";
+@import "./contracts.css";
+@import "./responsive.css";

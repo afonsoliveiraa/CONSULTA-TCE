@@ -1,0 +1,345 @@
+/* Estilos reutilizaveis da grade, toolbar e modal de colunas. */
+
+.grid-demo__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 24px;
+}
+
+.grid-demo__toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.grid-demo__search {
+  display: grid;
+  gap: 6px;
+  min-width: 320px;
+}
+
+.grid-demo__search--compact {
+  gap: 0;
+}
+
+.grid-demo__search span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.grid-demo__search-field {
+  position: relative;
+}
+
+.grid-demo__search input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 40px 0 12px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.grid-demo__search-icon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: #8a8a8a;
+  width: 18px;
+  height: 18px;
+}
+
+.grid-demo__search-icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.grid-demo__toolbar-buttons {
+  display: flex;
+  gap: 14px;
+}
+
+.grid-demo__text-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  gap: 8px;
+  padding: 0 2px;
+  color: #3f3f3f;
+  text-transform: uppercase;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+}
+
+.grid-demo__toolbar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: #2f2f2f;
+}
+
+.contracts-results__toolbar .grid-demo__toolbar-icon {
+  color: #2f2f2f;
+}
+
+.contracts-results__action-icon,
+.contracts-results__action-icon svg,
+.contracts-results__action-icon path {
+  color: #2f2f2f;
+  fill: currentColor;
+}
+
+.grid-demo__toolbar-icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.grid-demo__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.grid-demo__head-cell {
+  cursor: grab;
+  user-select: none;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.grid-demo__head-cell.is-drop-target {
+  background: rgba(0, 127, 134, 0.08);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.grid-demo__sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  color: rgba(0, 0, 0, 0.6);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: transparent;
+  cursor: pointer;
+}
+
+.grid-demo__sort-button--active {
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.grid-demo__sort-svg {
+  width: 16px;
+  height: 16px;
+  color: rgba(0, 0, 0, 0.54);
+  flex: 0 0 auto;
+}
+
+.grid-demo__sort-svg.is-active {
+  color: var(--brand);
+}
+
+.grid-demo__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.grid-demo__modal {
+  width: min(420px, calc(100vw - 32px));
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.grid-demo__modal-header,
+.grid-demo__modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+.grid-demo__modal-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.grid-demo__modal-header strong {
+  font-size: 1rem;
+}
+
+.grid-demo__modal-close {
+  color: #666;
+  font-size: 1rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.grid-demo__modal-body {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+}
+
+.grid-demo__modal-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+}
+
+.grid-demo__modal-option input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand);
+}
+
+.grid-demo__modal-hint {
+  padding: 0 20px 16px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.grid-demo__modal-footer {
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.grid-demo__modal-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.grid-demo__modal-button--ghost {
+  color: #4f4f4f;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+}
+
+.grid-demo__modal-button--primary {
+  color: #fff;
+  background: var(--brand);
+}
+
+/* Mantem o estilo base dos cards de filtro usados nas telas com grade. */
+.filters-card {
+  display: grid;
+  gap: 16px;
+  min-height: 118px;
+  padding: 14px 18px 16px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.filters-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.filters-card__header strong {
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
+.filters-card__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: -2px;
+  color: #5f6368;
+  cursor: pointer;
+  background: transparent;
+}
+
+.filters-card__toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.filters-card__fields {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filters-card__field {
+  position: relative;
+  display: block;
+  min-width: 0;
+  width: 270px;
+}
+
+.filters-card__field-label {
+  position: absolute;
+  top: -7px;
+  left: 11px;
+  z-index: 1;
+  padding: 0 5px;
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 0.76rem;
+  line-height: 1;
+  background: #fff;
+}
+
+.filters-card__input-wrap {
+  position: relative;
+}
+
+.filters-card__input-icon {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  width: 18px;
+  height: 18px;
+  color: #757575;
+  transform: translateY(-50%);
+}
+
+.filters-card__input-icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.filters-card__input-wrap input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px 0 42px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.filters-card__input-wrap input::placeholder {
+  color: rgba(0, 0, 0, 0.46);
+}

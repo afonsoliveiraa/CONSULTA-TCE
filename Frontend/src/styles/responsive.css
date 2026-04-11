@@ -1,0 +1,63 @@
+/* Ajustes responsivos da aplicacao e das telas de contratos. */
+
+@media (max-width: 980px) {
+  .decision-layout,
+  .decision-layout--collapsed {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .app-sidebar {
+    height: auto;
+    overflow: visible;
+  }
+
+  .decision-main {
+    overflow: visible;
+    padding: 16px;
+  }
+
+  .grid-demo__toolbar,
+  .grid-demo__toolbar-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .grid-demo__search {
+    min-width: 0;
+  }
+
+  .filters-card {
+    margin: 0;
+  }
+
+  .filters-card__field {
+    width: 100%;
+  }
+
+  .contracts-topbar,
+  .contracts-page__title,
+  .contracts-card__header,
+  .contracts-results__header {
+    flex-direction: column;
+  }
+
+  .contracts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contracts-steps {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .contracts-step + .contracts-step {
+    border-left: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .contracts-button--filter {
+    width: 100%;
+  }
+}
