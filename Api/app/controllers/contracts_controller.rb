@@ -43,6 +43,7 @@ class ContractsController < ApplicationController
     else
       render json: { error: "Nenhum contrato encontrado para este número" }, status: :not_found
     end
+    
   end
 
   private

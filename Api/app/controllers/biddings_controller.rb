@@ -25,6 +25,24 @@ class BiddingsController < ApplicationController
     end
   end
 
+  def show_by_numero_processo
+    
+    if params[:codigo_municipio].present?
+      scope = Bidding.where(numero_processo: params[:numero_processo], cod_municipio: params[:codigo_municipio])
+    else
+      scope = Bidding.where(numero_processo: params[:numero_processo])
+    end
+
+    if scope.any?
+      @pagy, @biddings = pagy(:offset, scope)
+      # utiliza a função do ApplicationController para renderizar a resposta paginada
+      render_paginated(@pagy, @biddings)
+    else
+      render json: { error: "Nenhuma licitação encontrada para este número de processo" }, status: :not_found
+    end
+    
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_bidding
