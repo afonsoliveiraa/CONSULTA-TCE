@@ -12,14 +12,18 @@ class ContractService
 
   def import_multiple_files
     total_count = 0
+
     @files.each do |file|
       total_count += import_contracts(file)
     end
+
     total_count
   end
 
   def import_contracts(file) 
     count = 0
+    
+    # Begin/Transaction garante que se houver um erro em qualquer linha, nenhuma linha do arquivo será importada, mantendo a integridade dos dados.
     begin
       Contract.transaction do
         CSV.foreach(file.path, encoding: 'ISO-8859-1', col_sep: ',', quote_char: '"', skip_blanks: true) do |row|
@@ -28,15 +32,21 @@ class ContractService
                     when 19 then map_layout_2019_2023(row)
                     when 24 then map_layout_2024_2025(row)
                     else
-                      raise "Layout inválido: linha com #{row.size} colunas não suportada."
+                      raise "Layout inválido: linha com #{map_row} layout não suportado."
                     end
           
-          contract = Contract.new(map_row)
-          contract.save!
-          count += 1
+          if !Contract.exists?(map_row)
+            contract = Contract.new(map_row)
+            contract.save!
+            count += 1
+          else
+            raise "Linha já existe: #{map_row}"
+          end
+
         end
         count
       end
+    # rescue captura qualquer erro que ocorra durante a importação, seja por layout inválido, dados duplicados ou erros de validação, e registra o erro no log do Rails. Retorna 0 para indicar que nenhum contrato foi importado devido ao erro.
     rescue => e
       Rails.logger.error("Importação de contrato abortada [#{file.original_filename}]: #{e.message}")
       return 0

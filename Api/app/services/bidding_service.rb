@@ -20,6 +20,8 @@ class BiddingService
 
   def import_biddings(file)
     count = 0
+    
+    # Begin/Transaction garante que se houver um erro em qualquer linha, nenhuma linha do arquivo será importada, mantendo a integridade dos dados.
     begin
       Bidding.transaction do
         CSV.foreach(file.path, encoding: 'ISO-8859-1', col_sep: ',', quote_char: '"', skip_blanks: true) do |row|
@@ -31,15 +33,19 @@ class BiddingService
                     else
                       raise "Layout inválido: linha com #{row.size} colunas não suportada."
                     end
-
-          bidding = Bidding.new(map_row)
           
-          # save! dispara exceção e força o rollback total do arquivo se houver erro
-          bidding.save!
-          count += 1
+          if !Bidding.exists?(map_row)
+            bidding = Bidding.new(map_row)
+            # save! dispara exceção e força o rollback total do arquivo se houver erro
+            bidding.save!
+            count += 1
+          else
+            raise "Linha já existe: #{map_row}" 
+          end
         end
         count
       end
+    # rescue captura qualquer erro que ocorra durante a importação, seja por layout inválido, dados duplicados ou erros de validação, e registra o erro no log do Rails. Retorna 0 para indicar que nenhum registro foi importado devido ao erro.
     rescue => e
       Rails.logger.error("Importação de licitação abortada [#{file.original_filename}]: #{e.message}")
       return 0
