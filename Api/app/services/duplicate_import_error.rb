@@ -1,0 +1,2 @@
+class DuplicateImportError < StandardError
+end

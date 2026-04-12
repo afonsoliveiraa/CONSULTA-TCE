@@ -1,19 +1,24 @@
 /* Ajustes responsivos da aplicacao e das telas de contratos. */
 
 @media (max-width: 980px) {
+  .decision-layout {
+    grid-template-columns: minmax(220px, 240px) minmax(0, 1fr);
+  }
+
+  .decision-layout--collapsed {
+    grid-template-columns: 70px minmax(0, 1fr);
+  }
+
   .decision-layout,
   .decision-layout--collapsed {
-    grid-template-columns: 1fr;
     min-height: auto;
   }
 
   .app-sidebar {
-    height: auto;
-    overflow: visible;
+    min-height: calc(100vh - 56px);
   }
 
   .decision-main {
-    overflow: visible;
     padding: 16px;
   }
 

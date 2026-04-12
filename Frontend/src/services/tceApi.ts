@@ -22,6 +22,18 @@ export async function fetchTceMunicipalities(): Promise<TceMunicipalityOption[]>
   return response.data;
 }
 
+// Carrega apenas municipios que ja possuem registros importados nas consultas locais.
+export async function fetchImportedMunicipalities(
+  resource?: "contracts" | "biddings" | "vehicles",
+): Promise<TceMunicipalityOption[]> {
+  const response = await api.get("/catalog/tce/imported_municipios", {
+    params: {
+      resource,
+    },
+  });
+  return response.data;
+}
+
 // Envia ao backend a consulta dinamica escolhida pelo usuario.
 export async function queryTce(payload: QueryPayload): Promise<TceQueryResult> {
   const response = await api.post("/tce/query", payload);

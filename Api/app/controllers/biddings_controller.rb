@@ -1,11 +1,12 @@
 class BiddingsController < ApplicationController
-  before_action :set_bidding, only: %i[ show ]
+  before_action :set_bidding, only: %i[show]
 
   # GET /biddings
   def index
-    # Usa a gem pagy para paginar os resultados
-    @pagy, @biddings = pagy(:offset, Bidding.all)
-    # utiliza a função do ApplicationController para renderizar a resposta paginada
+    scope = Bidding.includes(:municipality)
+    scope = scope.for_municipality_code(bidding_params[:codigo_municipio] || bidding_params[:cod_municipio])
+
+    @pagy, @biddings = pagy(:offset, scope)
     render_paginated(@pagy, @biddings)
   end
 
@@ -16,41 +17,37 @@ class BiddingsController < ApplicationController
 
   # POST /biddings
   def create
-    bidding = BiddingService.import_multiple_files(Array(bidding_params[:files]))
+    result = BiddingService.import_multiple_files(Array(bidding_params[:files]))
 
-    if bidding > 0
-      render json: { message: "#{bidding} licitações importadas com sucesso." }, status: :created
+    if result.count.positive?
+      render json: { message: result.message }, status: :created
+    elsif result.duplicate
+      render json: { message: result.message }, status: :unprocessable_entity
     else
-      render json: { message: "Nenhuma licitação importada." }, status: :unprocessable_entity
+      render json: { message: result.message }, status: :unprocessable_entity
     end
   end
 
   def show_by_numero_processo
-    
-    if params[:codigo_municipio].present?
-      scope = Bidding.where(numero_processo: params[:numero_processo], cod_municipio: params[:codigo_municipio])
-    else
-      scope = Bidding.where(numero_processo: params[:numero_processo])
-    end
+    scope = Bidding.includes(:municipality).where(numero_processo: params[:numero_processo])
+    scope = scope.for_municipality_code(bidding_params[:codigo_municipio] || bidding_params[:cod_municipio])
 
     if scope.any?
       @pagy, @biddings = pagy(:offset, scope)
-      # utiliza a função do ApplicationController para renderizar a resposta paginada
       render_paginated(@pagy, @biddings)
     else
-      render json: { error: "Nenhuma licitação encontrada para este número de processo" }, status: :not_found
+      render json: { error: "Nenhuma licitacao encontrada para este numero de processo" }, status: :not_found
     end
-    
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_bidding
-      @bidding = Bidding.find(params.expect(:id))
-    end
 
-    # Only allow a list of trusted parameters through.
-    def bidding_params
-      params.permit( :cod_municipio, :numero_processo, :file, files: [] )
-    end
-end 
+  def set_bidding
+    @bidding = Bidding.find(params.expect(:id))
+  end
+
+  def bidding_params
+    # Aceita os dois nomes de parametro para manter compatibilidade com chamadas antigas.
+    params.permit(:cod_municipio, :codigo_municipio, :numero_processo, :file, files: [])
+  end
+end

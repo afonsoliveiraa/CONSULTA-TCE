@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
+import { sortCollectionByField, type SortDirection } from "../lib/sort";
 import { fetchTceEndpoints, fetchTceMunicipalities, queryTce } from "../services/tceApi";
 import type {
   TceColumnDefinition,
@@ -18,6 +19,8 @@ export function useTceQuery() {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [result, setResult] = useState<TceQueryResult | null>(null);
   const [quickSearch, setQuickSearch] = useState("");
+  const [sortColumnId, setSortColumnId] = useState("");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [loadingQuery, setLoadingQuery] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -103,16 +106,20 @@ export function useTceQuery() {
     }
 
     const normalizedQuickSearch = quickSearch.trim().toLowerCase();
-    if (!normalizedQuickSearch) {
-      return result.items;
+    const normalizedItems = !normalizedQuickSearch
+      ? result.items
+      : result.items.filter((item) =>
+          result.columns.some((column) =>
+            formatTceValue(column, item[column]).toLowerCase().includes(normalizedQuickSearch),
+          ),
+        );
+
+    if (!sortColumnId) {
+      return normalizedItems;
     }
 
-    return result.items.filter((item) =>
-      result.columns.some((column) =>
-        formatTceValue(column, item[column]).toLowerCase().includes(normalizedQuickSearch),
-      ),
-    );
-  }, [quickSearch, result]);
+    return sortCollectionByField(normalizedItems, sortColumnId, sortDirection);
+  }, [quickSearch, result, sortColumnId, sortDirection]);
 
   useEffect(() => {
     if (!result) {
@@ -122,6 +129,8 @@ export function useTceQuery() {
 
     setColumns((current) => {
       if (current.length === 0) {
+        setSortColumnId(result.columns[0] ?? "");
+        setSortDirection("asc");
         return result.columns.map((column) => ({
           id: column,
           label: formatColumnLabel(column),
@@ -201,9 +210,21 @@ export function useTceQuery() {
     setFormValues({});
     setResult(null);
     setColumns([]);
+    setSortColumnId("");
+    setSortDirection("asc");
     setSuccessMessage("");
     setErrorMessage("");
     setQuickSearch("");
+  };
+
+  const handleSortChange = (columnId: string) => {
+    if (sortColumnId === columnId) {
+      setSortDirection((currentDirection) => (currentDirection === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortColumnId(columnId);
+    setSortDirection("asc");
   };
 
   const buildQueryParameters = () => {
@@ -337,6 +358,8 @@ export function useTceQuery() {
     successMessage,
     showColumnModal,
     columns,
+    sortColumnId,
+    sortDirection,
     visibleColumns,
     dropTargetColumnId,
     setSelectedMunicipalityCode,
@@ -347,6 +370,7 @@ export function useTceQuery() {
     setDropTargetColumnId,
     setColumnVisibility,
     handleEndpointChange,
+    handleSortChange,
     handleColumnDrop,
     handleSubmit,
     handlePageChange,

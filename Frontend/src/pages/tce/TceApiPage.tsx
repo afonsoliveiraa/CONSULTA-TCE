@@ -1,6 +1,8 @@
 import { type FunctionalComponent, Fragment } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 import { ColumnsIcon, DownloadIcon, SearchIcon, SortIcon } from "../../components/GridIcons";
 import { useTceQuery } from "../../hooks/useTceQuery";
+import { showToast } from "../../lib/toast";
 import { TceColumnsModal } from "./components/TceColumnsModal";
 import { formatEndpointName, formatTceValue } from "./tcePresentation";
 
@@ -25,6 +27,8 @@ export const TceApiPage: FunctionalComponent = () => {
     successMessage,
     showColumnModal,
     columns,
+    sortColumnId,
+    sortDirection,
     visibleColumns,
     dropTargetColumnId,
     setSelectedMunicipalityCode,
@@ -35,11 +39,51 @@ export const TceApiPage: FunctionalComponent = () => {
     setDropTargetColumnId,
     setColumnVisibility,
     handleEndpointChange,
+    handleSortChange,
     handleColumnDrop,
     handleSubmit,
     handlePageChange,
     handleExportCsv,
   } = useTceQuery();
+  const previousEndpointKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (successMessage) {
+      showToast({ message: successMessage, tone: "success" });
+    }
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (errorMessage) {
+      showToast({ message: errorMessage, tone: "error" });
+    }
+  }, [errorMessage]);
+
+  useEffect(() => {
+    if (!activeEndpoint) {
+      previousEndpointKeyRef.current = null;
+      return;
+    }
+
+    if (previousEndpointKeyRef.current === activeEndpoint.key) {
+      return;
+    }
+
+    previousEndpointKeyRef.current = activeEndpoint.key;
+
+    if (optionalFields.length === 0) {
+      showToast({
+        message: `O assunto "${formatEndpointName(activeEndpoint)}" nao possui campos opcionais adicionais.`,
+        tone: "neutral",
+      });
+      return;
+    }
+
+    showToast({
+      message: `Assunto "${formatEndpointName(activeEndpoint)}" carregado com ${optionalFields.length} filtro(s) opcional(is).`,
+      tone: "neutral",
+    });
+  }, [activeEndpoint, optionalFields]);
 
   const renderField = (fieldName: string, fieldLabel: string, hint?: string, type = "text") => (
     <label key={fieldName} class="filters-card__field tce-field">
@@ -171,13 +215,7 @@ export const TceApiPage: FunctionalComponent = () => {
           </div>
 
           <div class="filters-card__fields tce-fields-grid tce-fields-grid--with-action">
-            {optionalFields.length > 0 ? (
-              optionalFields.map((field) => renderEndpointField(field))
-            ) : (
-              <p class="contracts-feedback contracts-feedback--neutral">
-                Este assunto nao possui campos opcionais adicionais.
-              </p>
-            )}
+            {optionalFields.length > 0 ? optionalFields.map((field) => renderEndpointField(field)) : null}
 
             <div class="tce-filter-action">
               <button
@@ -189,15 +227,6 @@ export const TceApiPage: FunctionalComponent = () => {
               </button>
             </div>
           </div>
-
-          {successMessage ? <p class="contracts-feedback contracts-feedback--success">{successMessage}</p> : null}
-          {errorMessage ? <p class="contracts-feedback contracts-feedback--error">{errorMessage}</p> : null}
-
-          <p class="contracts-feedback contracts-feedback--neutral">
-            {selectedMunicipality && activeEndpoint
-              ? `${selectedMunicipality.name} • ${formatEndpointName(activeEndpoint)}. Use a busca rapida da grade para refinar os resultados.`
-              : "Selecione municipio, assunto e os campos necessarios para carregar os dados na grade abaixo."}
-          </p>
         </article>
       </form>
 
@@ -262,9 +291,16 @@ export const TceApiPage: FunctionalComponent = () => {
                       setDropTargetColumnId(null);
                     }}
                   >
-                    <button class="grid-demo__sort-button grid-demo__sort-button--active" type="button">
+                    <button
+                      class={`grid-demo__sort-button${sortColumnId === column.id ? " grid-demo__sort-button--active" : ""}`}
+                      type="button"
+                      onClick={() => handleSortChange(column.id)}
+                    >
                       <span>{column.label}</span>
-                      <SortIcon active />
+                      <SortIcon
+                        active={sortColumnId === column.id}
+                        direction={sortColumnId === column.id ? sortDirection : "asc"}
+                      />
                     </button>
                   </th>
                 ))}

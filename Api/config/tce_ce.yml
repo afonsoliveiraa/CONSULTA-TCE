@@ -1,0 +1,166 @@
+default: &default
+  base_url: https://api-dados-abertos.tce.ce.gov.br/
+  cache_seconds: 300
+  api_key: ""
+  api_key_header_name: ""
+  swagger_ui_init_path: ../../API-TCE-CE/swagger-ui-init.js
+  resources:
+    municipios:
+      path: municipios
+      category: Informacoes basicas
+      description: Relacao de municipios do Estado do Ceara.
+      required_query_parameters: []
+      optional_query_parameters:
+        - codigo_municipio
+        - nome_municipio
+        - geoibgeId
+        - geonamesId
+    unidades_gestoras:
+      path: unidades_gestoras
+      category: Informacoes basicas
+      description: Relacao de unidades gestoras do municipio.
+      required_query_parameters:
+        - codigo_municipio
+        - exercicio_orcamento
+      optional_query_parameters: []
+    dados_orcamentos:
+      path: dados_orcamentos
+      category: Orcamento municipal
+      description: Dados do orcamento municipal.
+      required_query_parameters:
+        - codigo_municipio
+        - exercicio_orcamento
+      optional_query_parameters:
+        - nu_lei_orcamento
+        - valor_total_fixado_orcamento
+        - numero_perc_sup_orcamento
+        - data_envio_loa
+        - data_aprov_loa
+        - data_public_loa
+    contas_bancarias:
+      path: contas_bancarias
+      category: Informacoes basicas
+      description: Contas bancarias vinculadas ao municipio.
+      required_query_parameters:
+        - codigo_municipio
+        - exercicio_orcamento
+      optional_query_parameters:
+        - codigo_orgao
+        - codigo_unidade
+        - numero_banco
+        - numero_agencia
+        - data_referencia
+    orgaos:
+      path: orgaos
+      category: Informacoes basicas
+      description: Relacao de orgaos municipais.
+      required_query_parameters:
+        - codigo_municipio
+        - exercicio_orcamento
+      optional_query_parameters:
+        - codigo_orgao
+        - nome_orgao
+    programas:
+      path: programas
+      category: Orcamento municipal
+      description: Programas de governo estabelecidos na LOA municipal.
+      required_query_parameters:
+        - codigo_municipio
+        - exercicio_orcamento
+      optional_query_parameters:
+        - codigo_programa
+        - nome_programa
+    licitacoes:
+      path: licitacoes
+      category: Aquisicoes e contratos
+      description: Relacao de licitacoes do municipio.
+      required_query_parameters:
+        - codigo_municipio
+        - data_realizacao_autuacao_licitacao
+      optional_query_parameters:
+        - numero_licitacao
+        - modalidade_licitacao
+        - tp_licitacao_li
+        - modalidade_processo_administrativo
+    licitantes:
+      path: licitantes
+      category: Aquisicoes e contratos
+      description: Licitantes que participaram de processos do municipio.
+      required_query_parameters:
+        - codigo_municipio
+        - data_realizacao_licitacao
+        - quantidade
+        - deslocamento
+      optional_query_parameters:
+        - numero_licitacao
+        - numero_documento_negociante
+        - nome_negociante
+    contratados:
+      path: contratados
+      category: Aquisicoes e contratos
+      description: Contratados pelo municipio.
+      required_query_parameters:
+        - codigo_municipio
+        - data_contrato
+        - quantidade
+        - deslocamento
+      optional_query_parameters:
+        - numero_documento_negociante
+        - nome_negociante
+        - numero_contrato
+    contrato:
+      path: contrato
+      category: Aquisicoes e contratos
+      description: Contratos firmados no municipio.
+      required_query_parameters:
+        - codigo_municipio
+        - data_contrato
+        - quantidade
+        - deslocamento
+      optional_query_parameters:
+        - numero_contrato
+        - tipo_contrato
+        - modalidade_contrato
+    notas_empenhos:
+      path: notas_empenhos
+      category: Despesas
+      description: Notas de empenho expedidas no municipio.
+      required_query_parameters:
+        - codigo_municipio
+        - data_referencia_empenho
+        - codigo_orgao
+        - quantidade
+        - deslocamento
+      optional_query_parameters:
+        - exercicio_orcamento
+        - codigo_unidade
+        - numero_empenho
+        - data_emissao_empenho
+        - numero_documento_negociante
+        - numero_licitacao
+        - nome_negociante
+    agentes_publicos:
+      path: agentes_publicos
+      category: Pessoal
+      description: Dados funcionais dos agentes publicos municipais.
+      required_query_parameters:
+        - codigo_municipio
+        - exercicio_orcamento
+        - quantidade
+        - deslocamento
+      optional_query_parameters:
+        - codigo_orgao
+        - codigo_unidade
+        - codigo_ingresso
+        - situacao_funcional
+        - data_referencia_agente_publico
+        - nome_servidor
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default

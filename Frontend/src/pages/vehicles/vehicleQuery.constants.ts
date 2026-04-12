@@ -1,0 +1,27 @@
+import type { VehicleColumnDefinition } from "./vehicleQuery.types";
+
+export const vehicleColumns: VehicleColumnDefinition[] = [
+  { id: "tipo_documento", label: "Tipo Documento", active: true },
+  { id: "municipality_name", label: "Municipio", active: true },
+  { id: "cod_municipio", label: "Codigo do Municipio", active: false },
+  { id: "codigo_renavam", label: "RENAVAM", active: true },
+  { id: "placa", label: "Placa", active: true },
+  { id: "chassi_vin", label: "Chassi", active: true },
+  { id: "tipo_documento_proprietario", label: "Tipo Doc. Proprietario", active: false },
+  { id: "documento_proprietario", label: "Documento Proprietario", active: true },
+  { id: "nome_razao_social_proprietario", label: "Nome/Razao Social", active: true },
+  { id: "cidade_emplacamento", label: "Cidade Emplacamento", active: false },
+  { id: "uf_emplacamento", label: "UF Emplacamento", active: false },
+  { id: "ano_fabricacao", label: "Ano Fabricacao", active: true },
+  { id: "ano_modelo", label: "Ano Modelo", active: true },
+  { id: "marca", label: "Marca", active: true },
+  { id: "modelo_versao", label: "Modelo/Versao", active: true },
+  { id: "cor_predominante", label: "Cor Predominante", active: false },
+  { id: "tipo_combustivel", label: "Tipo Combustivel", active: false },
+  { id: "tipo_veiculo", label: "Tipo Veiculo", active: true },
+  { id: "tipo_vinculacao", label: "Tipo Vinculacao", active: true },
+  { id: "registro_tombo", label: "Registro/Tombo", active: false },
+  { id: "situacao_veiculo", label: "Situacao Veiculo", active: true },
+  { id: "odometro", label: "Odometro", active: false },
+  { id: "data_referencia_documentacao", label: "Data Referencia", active: true },
+];

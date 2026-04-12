@@ -1,24 +1,99 @@
 import { type FunctionalComponent } from "preact";
-import { useRef, useState } from "preact/hooks";
-import { uploadContratos } from "../services/contratosApi";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { Icon, type IconName } from "../components/Icon";
+import { showToast } from "../lib/toast";
+import { uploadContratos, uploadLicitacoes, uploadVeiculos, type UploadResource } from "../services/contratosApi";
+
+type UploadTone = "contracts" | "biddings" | "vehicles";
+
+type UploadCardContent = {
+  code: string;
+  tone: UploadTone;
+  sectionLabel: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  actionLabel: string;
+  emptyState: string;
+  expectedExtension: string;
+  icon: IconName;
+};
+
+const uploadContentByType: Record<UploadResource, UploadCardContent> = {
+  contracts: {
+    code: "CO",
+    tone: "contracts",
+    sectionLabel: "Contratos",
+    title: "Selecionar arquivos de contratos",
+    subtitle: "Arraste os arquivos para esta area ou abra o explorador manualmente.",
+    description: "Importacao historica de contratos do SIM.",
+    actionLabel: "contratos",
+    emptyState: "Nenhum arquivo selecionado.",
+    expectedExtension: "LCO",
+    icon: "file",
+  },
+  biddings: {
+    code: "LI",
+    tone: "biddings",
+    sectionLabel: "Licitacoes",
+    title: "Selecionar arquivos de licitacoes",
+    subtitle: "Arraste os arquivos para esta area ou abra o explorador manualmente.",
+    description: "Importacao historica de licitacoes do SIM.",
+    actionLabel: "licitacoes",
+    emptyState: "Nenhum arquivo selecionado.",
+    expectedExtension: "LCO",
+    icon: "file",
+  },
+  vehicles: {
+    code: "VM",
+    tone: "vehicles",
+    sectionLabel: "Veiculos",
+    title: "Selecionar arquivos de veiculos",
+    subtitle: "Arraste os arquivos para esta area ou abra o explorador manualmente.",
+    description: "Importacao historica de veiculos municipais do SIM.",
+    actionLabel: "veiculos",
+    emptyState: "Nenhum arquivo selecionado.",
+    expectedExtension: "VCL",
+    icon: "file",
+  },
+};
+
+function formatFileSize(size: number) {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export const UploadHistoryPage: FunctionalComponent = () => {
   const inputArquivoRef = useRef<HTMLInputElement>(null);
   const [arquivos, setArquivos] = useState<File[]>([]);
+  const [tipoUpload, setTipoUpload] = useState<UploadResource>("contracts");
   const [mensagemUpload, setMensagemUpload] = useState("");
   const [erroUpload, setErroUpload] = useState("");
   const [carregandoUpload, setCarregandoUpload] = useState(false);
   const [arrastandoArquivo, setArrastandoArquivo] = useState(false);
 
-  // Apenas seleciona os arquivos e guarda no estado
+  useEffect(() => {
+    if (mensagemUpload) {
+      showToast({ message: mensagemUpload, tone: "success" });
+    }
+  }, [mensagemUpload]);
+
+  useEffect(() => {
+    if (erroUpload) {
+      showToast({ message: erroUpload, tone: "error" });
+    }
+  }, [erroUpload]);
+
   const lidarComSelecao = (lista: FileList | null) => {
     if (!lista) return;
+
     setArquivos(Array.from(lista));
     setMensagemUpload("");
     setErroUpload("");
   };
 
-  // Executa o upload de fato
   const executarUpload = async () => {
     if (arquivos.length === 0) return;
 
@@ -27,9 +102,15 @@ export const UploadHistoryPage: FunctionalComponent = () => {
     setErroUpload("");
 
     try {
-      const mensagem = await uploadContratos(arquivos);
+      const mensagem =
+        tipoUpload === "contracts"
+          ? await uploadContratos(arquivos)
+          : tipoUpload === "biddings"
+            ? await uploadLicitacoes(arquivos)
+            : await uploadVeiculos(arquivos);
+
       setMensagemUpload(mensagem);
-      setArquivos([]); // Limpa a lista após sucesso
+      setArquivos([]);
     } catch (error) {
       setErroUpload(error instanceof Error ? error.message : "Falha ao enviar os arquivos.");
     } finally {
@@ -45,7 +126,9 @@ export const UploadHistoryPage: FunctionalComponent = () => {
   const handleDragLeave = (event: DragEvent) => {
     const elementoAtual = event.currentTarget as HTMLElement | null;
     const proximoAlvo = event.relatedTarget as Node | null;
+
     if (elementoAtual?.contains(proximoAlvo)) return;
+
     setArrastandoArquivo(false);
   };
 
@@ -55,85 +138,137 @@ export const UploadHistoryPage: FunctionalComponent = () => {
     lidarComSelecao(event.dataTransfer?.files ?? null);
   };
 
+  const uploadCardContent = uploadContentByType[tipoUpload];
+  const totalSelectedSize = arquivos.reduce((total, arquivo) => total + arquivo.size, 0);
+
   return (
     <div class="contracts-upload-shell">
       <div class="contracts-grid contracts-grid--single">
         <article class="contracts-card contracts-card--upload-compact">
           <div class="contracts-card__header">
             <div>
-              <h2>Importar Histórico de Contratos</h2>
-              <p style={{ color: '#666', fontSize: '0.85rem' }}>Selecione um ou mais arquivos .LCO</p>
+              <h2>Importar Arquivos Historicos</h2>
+              <p class="contracts-upload__intro">Escolha o tipo do lote e envie os arquivos correspondentes.</p>
             </div>
           </div>
 
           <div class="contracts-form">
-            <label class="contracts-field">
+            <div class="contracts-upload__segmented" role="tablist" aria-label="Tipo de importacao">
+              <button
+                class={`contracts-upload__segment${tipoUpload === "contracts" ? " is-active" : ""}`}
+                type="button"
+                onClick={() => setTipoUpload("contracts")}
+              >
+                Contratos
+              </button>
+
+              <button
+                class={`contracts-upload__segment${tipoUpload === "biddings" ? " is-active" : ""}`}
+                type="button"
+                onClick={() => setTipoUpload("biddings")}
+              >
+                Licitacoes
+              </button>
+
+              <button
+                class={`contracts-upload__segment${tipoUpload === "vehicles" ? " is-active" : ""}`}
+                type="button"
+                onClick={() => setTipoUpload("vehicles")}
+              >
+                Veiculos
+              </button>
+            </div>
+
+            <div class="contracts-field">
               <div
-                class={`contracts-dropzone${arrastandoArquivo ? " is-dragging" : ""}`}
+                class={`contracts-dropzone contracts-dropzone--refined${arrastandoArquivo ? " is-dragging" : ""}${arquivos.length > 0 ? " is-ready" : ""}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => inputArquivoRef.current?.click()}
-                style={{ cursor: 'pointer' }}
               >
-                <div class="contracts-dropzone__content">
-                  <span style={{ fontSize: '2rem', marginBottom: '10px' }}>📁</span>
-                  <strong>Arraste os arquivos para cá</strong>
-                  <span>ou clique para abrir o seletor</span>
+                <div class="contracts-dropzone__header">
+                  <span class={`contracts-dropzone__file-code contracts-dropzone__file-code--${uploadCardContent.tone}`}>
+                    {uploadCardContent.code}
+                  </span>
+                  <div class="contracts-dropzone__header-copy">
+                    <strong>{uploadCardContent.title}</strong>
+                    <span>{uploadCardContent.sectionLabel}</span>
+                  </div>
+                  <span class="contracts-dropzone__type-icon" aria-hidden="true">
+                    <Icon name={uploadCardContent.icon} className="sidebar-svg-icon" />
+                  </span>
+                </div>
+
+                <div class="contracts-dropzone__body">
+                  <p class="contracts-dropzone__headline">{uploadCardContent.subtitle}</p>
+                  <p class="contracts-dropzone__description">{uploadCardContent.description}</p>
+
+                  <div class="contracts-dropzone__actions">
+                    <button
+                      class="contracts-button contracts-button--picker"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        inputArquivoRef.current?.click();
+                      }}
+                    >
+                      Escolher arquivos
+                    </button>
+                    <span class="contracts-dropzone__hint">Extensao esperada: {uploadCardContent.expectedExtension}</span>
+                  </div>
                 </div>
               </div>
-            </label>
+            </div>
 
             <input
               ref={inputArquivoRef}
-              id="arquivo-contratos"
+              id="arquivo-historico"
               class="contracts-file-input-hidden"
               type="file"
               multiple
-              onChange={(e) => lidarComSelecao(e.currentTarget.files)}
+              onChange={(event) => lidarComSelecao(event.currentTarget.files)}
             />
           </div>
 
-          {/* Lista de Arquivos Selecionados */}
-          {arquivos.length > 0 && (
-            <div class="contracts-file-list-container" style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-              <p style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '10px' }}>
-                Arquivos para importar ({arquivos.length}):
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0 }}>
-                {arquivos.map((arq) => (
-                  <li key={arq.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '5px', padding: '5px', background: '#f9f9f9', borderRadius: '4px' }}>
-                    <span>{arq.name}</span>
-                    <span style={{ color: '#888' }}>{(arq.size / 1024).toFixed(1)} KB</span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* Botão de Ação Principal: Posicionado no final da lista */}
-              <button
-                class="contracts-button contracts-button--primary"
-                type="button"
-                disabled={carregandoUpload}
-                onClick={executarUpload}
-                style={{ width: '100%', marginTop: '15px', padding: '12px', fontWeight: 'bold' }}
-              >
-                {carregandoUpload ? "Processando..." : `Confirmar Importação de ${arquivos.length} arquivo(s)`}
-              </button>
+          <div class={`contracts-upload__selection${arquivos.length > 0 ? " is-ready" : ""}`}>
+            <div class="contracts-upload__selection-summary">
+              <strong>{arquivos.length > 0 ? `${arquivos.length} arquivo(s) selecionado(s)` : uploadCardContent.emptyState}</strong>
+              <span>
+                {arquivos.length > 0
+                  ? `Lote ${uploadCardContent.code} • ${formatFileSize(totalSelectedSize)} no total`
+                  : `Lote ${uploadCardContent.code} pronto para importacao`}
+              </span>
             </div>
-          )}
 
-          {/* Feedbacks */}
-          {mensagemUpload && (
-            <p class="contracts-feedback contracts-feedback--success" style={{ marginTop: '15px' }}>
-              ✅ {mensagemUpload}
-            </p>
-          )}
+            {arquivos.length > 0 ? (
+              <div class="contracts-upload__file-chips" aria-label="Arquivos selecionados">
+                {arquivos.slice(0, 6).map((arquivo) => (
+                  <span key={`${arquivo.name}-${arquivo.size}`} class="contracts-upload__file-chip">
+                    <strong>{arquivo.name}</strong>
+                    <small>{formatFileSize(arquivo.size)}</small>
+                  </span>
+                ))}
+                {arquivos.length > 6 ? (
+                  <span class="contracts-upload__file-chip contracts-upload__file-chip--muted">
+                    <strong>+{arquivos.length - 6} arquivo(s)</strong>
+                    <small>na selecao</small>
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
 
-          {erroUpload && (
-            <p class="contracts-feedback contracts-feedback--error" style={{ marginTop: '15px' }}>
-              ❌ {erroUpload}
-            </p>
-          )}
+            <button
+              class="contracts-button contracts-upload__submit"
+              type="button"
+              disabled={carregandoUpload || arquivos.length === 0}
+              onClick={executarUpload}
+            >
+              {carregandoUpload
+                ? "Processando..."
+                : `Confirmar importacao de ${uploadCardContent.actionLabel}`}
+            </button>
+          </div>
         </article>
       </div>
     </div>

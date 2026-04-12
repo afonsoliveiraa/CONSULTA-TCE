@@ -1,4 +1,5 @@
 import api from "./api"; 
+import axios from "axios";
 import type { Contrato } from "../types/contrato";
 
 export interface ContratoPagedResult {
@@ -14,30 +15,83 @@ export interface ContratoPagedResult {
   };
 }
 
+export type UploadResource = "contracts" | "biddings" | "vehicles";
+
+function appendFilesToFormData(arquivos: File | File[]): FormData {
+  const formData = new FormData();
+  const listaArquivos = Array.isArray(arquivos) ? arquivos : [arquivos];
+
+  listaArquivos.forEach((arquivo) => {
+    formData.append("files[]", arquivo);
+  });
+
+  return formData;
+}
+
+function extractApiErrorMessage(error: unknown, fallbackMessage: string) {
+  if (axios.isAxiosError(error)) {
+    const responseMessage = error.response?.data?.message;
+    if (typeof responseMessage === "string" && responseMessage.trim()) {
+      return responseMessage;
+    }
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallbackMessage;
+}
+
 /**
  * Envia um ou mais arquivos para o Rails.
  */
 export async function uploadContratos(arquivos: File | File[]): Promise<string> {
-  const formData = new FormData();
-  
-  // Garantimos que trabalhamos com um array
-  const listaArquivos = Array.isArray(arquivos) ? arquivos : [arquivos];
+  const formData = appendFilesToFormData(arquivos);
 
-  listaArquivos.forEach((arquivo) => {
-    // IMPORTANTE: O sufixo [] na chave "files[]" garante que o Rails 
-    // receba um array no backend, casando com o params.permit(files: [])
-    formData.append("files[]", arquivo); 
-  });
+  try {
+    const response = await api.post("/contracts", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
-  const response = await api.post("/contracts", formData, {
-    headers: {
-      // O Axios define o Content-Type correto com o boundary automaticamente 
-      // ao detectar o FormData, mas mantemos a flexibilidade aqui.
-      "Content-Type": "multipart/form-data",
-    },
-  });
+    return response.data?.message ?? "Arquivos processados com sucesso!";
+  } catch (error) {
+    throw new Error(extractApiErrorMessage(error, "Falha ao enviar os arquivos de contratos."));
+  }
+}
 
-  return response.data?.message ?? "Arquivos processados com sucesso!";
+export async function uploadLicitacoes(arquivos: File | File[]): Promise<string> {
+  const formData = appendFilesToFormData(arquivos);
+
+  try {
+    const response = await api.post("/biddings", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data?.message ?? "Arquivos processados com sucesso!";
+  } catch (error) {
+    throw new Error(extractApiErrorMessage(error, "Falha ao enviar os arquivos de licitacoes."));
+  }
+}
+
+export async function uploadVeiculos(arquivos: File | File[]): Promise<string> {
+  const formData = appendFilesToFormData(arquivos);
+
+  try {
+    const response = await api.post("/vehicles", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data?.message ?? "Arquivos processados com sucesso!";
+  } catch (error) {
+    throw new Error(extractApiErrorMessage(error, "Falha ao enviar os arquivos de veiculos."));
+  }
 }
 
 /**
@@ -45,6 +99,7 @@ export async function uploadContratos(arquivos: File | File[]): Promise<string> 
  */
 export async function buscarContratos(
   numeroContrato?: string,
+  codMunicipio?: string,
   page = 1
 ): Promise<ContratoPagedResult> {
   const url = numeroContrato?.trim() 
@@ -53,6 +108,7 @@ export async function buscarContratos(
 
   const response = await api.get(url, {
     params: {
+      cod_municipio: codMunicipio?.trim() || undefined,
       "page[page]": page 
     },
   });

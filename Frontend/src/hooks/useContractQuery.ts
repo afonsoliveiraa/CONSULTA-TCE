@@ -1,16 +1,23 @@
 // frontend/src/hooks/useContractQuery.ts
 
-import { useState, useMemo, useCallback } from "preact/hooks";
+import { useState, useMemo, useCallback, useEffect } from "preact/hooks";
+import { sortCollectionByField, type SortDirection } from "../lib/sort";
 import { buscarContratos } from "../services/contratosApi";
+import { fetchImportedMunicipalities } from "../services/tceApi";
 import { contratoColumns } from "../pages/contracts/contractQuery.constants";
 import type { Contrato } from "../types/contrato";
 import type { ContratoColumnId } from "../pages/contracts/contractQuery.types";
+import type { TceMunicipalityOption } from "../types/tce";
 
 export function useContractQuery() {
   // --- Estados de Dados ---
   const [contratos, setContratos] = useState<Contrato[]>([]);
+  const [municipios, setMunicipios] = useState<TceMunicipalityOption[]>([]);
   const [numeroContrato, setNumeroContrato] = useState("");
+  const [codigoMunicipio, setCodigoMunicipio] = useState("");
   const [quickSearch, setQuickSearch] = useState("");
+  const [sortColumnId, setSortColumnId] = useState<ContratoColumnId>("numero_contrato");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   // --- Estados de Colunas (Usando suas constantes) ---
   const [columns, setColumns] = useState(contratoColumns);
@@ -28,6 +35,19 @@ export function useContractQuery() {
   const [mensagemConsulta, setMensagemConsulta] = useState("");
   const [showColumnModal, setShowColumnModal] = useState(false);
 
+  useEffect(() => {
+    const carregarMunicipios = async () => {
+      try {
+        const response = await fetchImportedMunicipalities("contracts");
+        setMunicipios(response);
+      } catch {
+        setMunicipios([]);
+      }
+    };
+
+    carregarMunicipios();
+  }, []);
+
   // --- Lógica de Colunas Visíveis ---
   const visibleColumns = useMemo(() => 
     columns.filter((col) => col.active), 
@@ -35,15 +55,18 @@ export function useContractQuery() {
 
   // --- Lógica de Filtro Local (Quick Search na Grade) ---
   const filteredContratos = useMemo(() => {
-    if (!quickSearch.trim()) return contratos;
+    const normalizedContracts = !quickSearch.trim()
+      ? contratos
+      : contratos.filter((contrato) =>
+          Object.values(contrato).some((value) => String(value).toLowerCase().includes(quickSearch.toLowerCase()))
+        );
 
-    const searchLower = quickSearch.toLowerCase();
-    return contratos.filter((contrato) =>
-      Object.values(contrato).some((value) =>
-        String(value).toLowerCase().includes(searchLower)
-      )
-    );
-  }, [contratos, quickSearch]);
+    return sortCollectionByField(
+      normalizedContracts as unknown as Record<string, unknown>[],
+      sortColumnId,
+      sortDirection,
+    ) as Contrato[];
+  }, [contratos, quickSearch, sortColumnId, sortDirection]);
 
   // --- Funções de Busca ---
   const carregarDados = useCallback(async (page: number) => {
@@ -52,7 +75,7 @@ export function useContractQuery() {
 
     try {
       // Ordem correta dos parâmetros conforme seu service: (numero, page)
-      const response = await buscarContratos(numeroContrato, page);
+      const response = await buscarContratos(numeroContrato, codigoMunicipio, page);
 
       setContratos(response.data || []);
       setCurrentPage(response.pagination.page);
@@ -60,8 +83,8 @@ export function useContractQuery() {
       setTotalPages(response.pagination.last);
 
       setMensagemConsulta(
-        numeroContrato
-          ? `${response.pagination.count} resultados para "${numeroContrato}"`
+        numeroContrato || codigoMunicipio
+          ? `${response.pagination.count} resultados encontrados.`
           : `Total de ${response.pagination.count} contratos carregados.`
       );
     } catch (err: any) {
@@ -70,7 +93,7 @@ export function useContractQuery() {
     } finally {
       setCarregandoConsulta(false);
     }
-  }, [numeroContrato]);
+  }, [codigoMunicipio, numeroContrato]);
 
   const handleBuscarContrato = async (e: Event) => {
     e.preventDefault();
@@ -80,6 +103,16 @@ export function useContractQuery() {
   const handlePageChange = (page: number) => {
     carregarDados(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSortChange = (columnId: ContratoColumnId) => {
+    if (sortColumnId === columnId) {
+      setSortDirection((currentDirection) => (currentDirection === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortColumnId(columnId);
+    setSortDirection("asc");
   };
 
   // --- Gestão de Colunas (Drag & Drop e Visibilidade) ---
@@ -114,8 +147,10 @@ export function useContractQuery() {
   return {
     // Dados
     contratos,
+    municipios,
     filteredContratos,
     numeroContrato,
+    codigoMunicipio,
     quickSearch,
     
     // Status
@@ -128,6 +163,8 @@ export function useContractQuery() {
     totalItems,
     totalPages,
     pageSize: 20,
+    sortColumnId,
+    sortDirection,
 
     // Colunas e Modal
     columns,
@@ -137,6 +174,7 @@ export function useContractQuery() {
     
     // Setters
     setNumeroContrato,
+    setCodigoMunicipio,
     setQuickSearch,
     setShowColumnModal,
     setDraggingColumnId,
@@ -146,6 +184,7 @@ export function useContractQuery() {
     // Handlers
     handleBuscarContrato,
     handlePageChange,
+    handleSortChange,
     handleColumnDrop,
     handleExportCsv,
   };

@@ -1,5 +1,19 @@
 Rails.application.routes.draw do
-  resources :biddings
+  namespace :catalog do
+    get "tce/endpoints", to: "tce#endpoints"
+    get "tce/municipios", to: "tce#municipios"
+    get "tce/imported_municipios", to: "tce#imported_municipios"
+  end
+
+  post "tce/query", to: "tce_queries#create"
+
+  resources :biddings do
+    collection do
+      # Isso gera: GET /biddings/numero/:numero_processo
+      get "numero/:numero_processo", action: :show_by_numero_processo
+    end
+  end
+  resources :vehicles
   resources :contracts do
     collection do
       # Isso gera: GET /contracts/numero/:numero_contrato

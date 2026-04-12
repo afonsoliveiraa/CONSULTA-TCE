@@ -1,12 +1,13 @@
 # app/controllers/contracts_controller.rb
 class ContractsController < ApplicationController
-  before_action :set_contract, only: %i[ show ]
+  before_action :set_contract, only: %i[show]
 
   # GET /contracts
   def index
-    # Usa a gem pagy para paginar os resultados
-    @pagy, @contracts = pagy(:offset, Contract.all)
-    # utiliza a função do ApplicationController para renderizar a resposta paginada
+    scope = Contract.includes(:municipality)
+    scope = scope.for_municipality_code(contract_params[:cod_municipio])
+
+    @pagy, @contracts = pagy(:offset, scope)
     render_paginated(@pagy, @contracts)
   end
 
@@ -17,33 +18,28 @@ class ContractsController < ApplicationController
 
   # POST /contracts
   def create
-    # Chama o service para importar os contratos a partir dos arquivos enviados
-    files_count = ContractService.import_multiple_files(Array(contract_params[:files]))
+    result = ContractService.import_multiple_files(Array(contract_params[:files]))
 
-    # Como a resposta do service é o número total de contratos importados, dá para criar a response
-    if files_count > 0
-      render json: { message: "#{files_count} contratos importados com sucesso." }, status: :created
+    if result.count.positive?
+      render json: { message: result.message }, status: :created
+    elsif result.duplicate
+      render json: { message: result.message }, status: :unprocessable_entity
     else
-      render json: { message: "Nenhum contrato importado." }, status: :unprocessable_entity
+      render json: { message: result.message }, status: :unprocessable_entity
     end
   end
 
   # GET /contracts/numero/:numero_contrato
   def show_by_numero_contrato
-    
-    if params[:cod_municipio].present?
-      scope = Contract.where(numero_contrato: params.expect(:numero_contrato), cod_municipio: params.expect(:cod_municipio))
-    else  
-      scope = Contract.where(numero_contrato: params.expect(:numero_contrato))
-    end
+    scope = Contract.includes(:municipality).where(numero_contrato: params.expect(:numero_contrato))
+    scope = scope.for_municipality_code(contract_params[:cod_municipio])
 
     if scope.any?
-      @pagy, @contracts = pagy(scope)
+      @pagy, @contracts = pagy(:offset, scope)
       render_paginated(@pagy, @contracts)
     else
-      render json: { error: "Nenhum contrato encontrado para este número" }, status: :not_found
+      render json: { error: "Nenhum contrato encontrado para este numero" }, status: :not_found
     end
-    
   end
 
   private
@@ -53,8 +49,7 @@ class ContractsController < ApplicationController
   end
 
   def contract_params
-    # CORREÇÃO: Permitindo :files (objeto único) e files: [] (array)
-    # Isso resolve o erro de Unpermitted parameter dependendo de como o arquivo é enviado.
+    # O controller preserva o nome atual do parametro para nao quebrar o frontend.
     params.permit(:numero_contrato, :cod_municipio, :files, files: [])
   end
 end
