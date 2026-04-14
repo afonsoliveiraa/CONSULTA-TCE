@@ -6,7 +6,12 @@ Rails.application.routes.draw do
     end
   end
 
-  get 'analyses-ne', action: :analyses_ne, controller: 'analyses'
+  # No routes.rb
+  resources :analyses, only: [] do
+    collection do
+      post :analyses_ne # Isso cria a rota POST /analyses/analyses_ne
+    end
+  end
 
   # Api TCE dinamica
   # Rota para pegar os parâmetros e documentação
