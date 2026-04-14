@@ -1,0 +1,41 @@
+// Representa o formato retornado pela API para consulta de licitacoes.
+export interface Bidding {
+  id: number;
+  tipo_documento: string;
+  cod_municipio: string;
+  municipality_code?: string | null;
+  municipality_name?: string | null;
+  data_autuacao: string | null;
+  numero_processo: string;
+  especie_processo: string;
+  objeto: string;
+  valor_estimado: number | null;
+  cpf_parecer_juridico: string;
+  nome_parecer_juridico: string;
+  cpf_gestor_unidade: string;
+  data_portaria_comissao: string | null;
+  sequencial_comissao: string;
+  cpf_homologacao: string;
+  nome_homologacao: string;
+  data_homologacao: string | null;
+  hora_realizacao: string;
+  data_realizacao: string | null;
+  modalidade: string;
+  criterio_julgamento: string;
+  valor_limite_superior: number | null;
+  justificativa_preco: string;
+  motivo_escolha_fornecedor: string;
+  fundamentacao_legal: string;
+  orgao_gerenciador_ata: string;
+  data_referencia: string | null;
+  cpf_cotacao_precos: string;
+  nome_cotacao_precos: string;
+  cpf_elaborador_termo: string;
+  nome_elaborador_termo: string;
+  forma_contratacao: string;
+  tipo_disputa: string;
+  url_plataforma: string;
+  sistema_registro_preco: string;
+  id_contratacao_pncp: string;
+  id_ata_pncp: string;
+}

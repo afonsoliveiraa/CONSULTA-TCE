@@ -26,6 +26,10 @@ function formatBrazilianDate(value: any) {
 }
 
 export function formatContratoValue(contrato: Contrato, field: string) {
+  if (field === "municipality_name") {
+    return contrato.municipality_name || contrato.cod_municipio || "-";
+  }
+
   const value = (contrato as any)[field];
 
   if (value === null || value === undefined || value === "") {

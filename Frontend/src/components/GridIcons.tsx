@@ -1,4 +1,5 @@
 import { type FunctionalComponent } from "preact";
+import type { SortDirection } from "../lib/sort";
 
 export const SearchIcon: FunctionalComponent = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -21,9 +22,20 @@ export const DownloadIcon: FunctionalComponent = () => (
   </svg>
 );
 
-export const SortIcon: FunctionalComponent<{ active?: boolean }> = ({ active }) => (
+export const SortIcon: FunctionalComponent<{ active?: boolean; direction?: SortDirection }> = ({
+  active,
+  direction = "asc",
+}) => (
   <svg class={`grid-demo__sort-svg${active ? " is-active" : ""}`} viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M7 14l5 5 5-5H7z" fill="currentColor" opacity={active ? "1" : "0.42"} />
-    <path d="M7 10l5-5 5 5H7z" fill="currentColor" opacity="0.42" />
+    <path
+      d="M7 14l5 5 5-5H7z"
+      fill="currentColor"
+      opacity={active && direction === "desc" ? "1" : "0.42"}
+    />
+    <path
+      d="M7 10l5-5 5 5H7z"
+      fill="currentColor"
+      opacity={active && direction === "asc" ? "1" : "0.42"}
+    />
   </svg>
 );

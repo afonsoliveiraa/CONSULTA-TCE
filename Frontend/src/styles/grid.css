@@ -1,5 +1,9 @@
-/* Estilos reutilizaveis da grade, toolbar e modal de colunas. */
+/* ==========================================================================
+   Estilos Reutilizáveis: Grade, Toolbar, Modal e Cards de Filtro
+   ========================================================================== */
 
+/* 1. TOOLBAR & BUSCA
+   ========================================================================== */
 .grid-demo__toolbar {
   display: flex;
   align-items: center;
@@ -58,6 +62,8 @@
   height: 18px;
 }
 
+/* 2. BOTÕES DA TOOLBAR
+   ========================================================================== */
 .grid-demo__toolbar-buttons {
   display: flex;
   gap: 14px;
@@ -98,12 +104,8 @@
   fill: currentColor;
 }
 
-.grid-demo__toolbar-icon svg {
-  display: block;
-  width: 18px;
-  height: 18px;
-}
-
+/* 3. TABELA & ORDENAÇÃO
+   ========================================================================== */
 .grid-demo__table {
   width: 100%;
   border-collapse: collapse;
@@ -115,6 +117,10 @@
   transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.grid-demo__head-cell:hover {
+  background: rgba(0, 127, 134, 0.05);
+}
+
 .grid-demo__head-cell.is-drop-target {
   background: rgba(0, 127, 134, 0.08);
   box-shadow: inset 3px 0 0 var(--brand);
@@ -124,7 +130,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0;
+  padding: 6px 8px;
+  margin: -6px -8px;
+  border-radius: 8px;
   color: rgba(0, 0, 0, 0.6);
   font: inherit;
   font-size: 0.78rem;
@@ -133,34 +141,40 @@
   text-transform: uppercase;
   background: transparent;
   cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .grid-demo__sort-button--active {
-  color: rgba(0, 0, 0, 0.82);
+  color: rgba(0, 0, 0, 0.88);
+  background: rgba(0, 127, 134, 0.12);
 }
 
 .grid-demo__sort-svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   color: rgba(0, 0, 0, 0.54);
   flex: 0 0 auto;
+  transition: color 0.15s ease, transform 0.15s ease;
 }
 
-.grid-demo__sort-svg.is-active {
-  color: var(--brand);
-}
-
+/* 4. MODAL DE COLUNAS
+   ========================================================================== */
 .grid-demo__modal-backdrop {
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
+  overflow-y: auto;
+  padding: 24px 16px;
   z-index: 60;
   background: rgba(0, 0, 0, 0.28);
 }
 
 .grid-demo__modal {
   width: min(420px, calc(100vw - 32px));
+  max-height: min(80vh, 720px);
+  display: flex;
+  flex-direction: column;
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
@@ -174,127 +188,57 @@
   padding: 16px 20px;
 }
 
-.grid-demo__modal-header {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.grid-demo__modal-header strong {
-  font-size: 1rem;
-}
-
-.grid-demo__modal-close {
-  color: #666;
-  font-size: 1rem;
-  background: transparent;
-  cursor: pointer;
-}
-
 .grid-demo__modal-body {
   display: grid;
   gap: 12px;
   padding: 18px 20px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
-.grid-demo__modal-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 0.95rem;
-}
-
-.grid-demo__modal-option input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--brand);
-}
-
-.grid-demo__modal-hint {
-  padding: 0 20px 16px;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.grid-demo__modal-footer {
-  justify-content: flex-end;
-  gap: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.grid-demo__modal-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 0 16px;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.grid-demo__modal-button--ghost {
-  color: #4f4f4f;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.14);
-}
-
-.grid-demo__modal-button--primary {
-  color: #fff;
-  background: var(--brand);
-}
-
-/* Mantem o estilo base dos cards de filtro usados nas telas com grade. */
+/* 5. CARD DE FILTROS (AJUSTADO PARA CONSISTÊNCIA)
+   ========================================================================== */
 .filters-card {
   display: grid;
-  gap: 16px;
-  min-height: 118px;
-  padding: 14px 18px 16px 14px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
+  gap: 18px; /* Ajustado para bater com o gap da tabela */
+  padding: 24px;
   background: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  
+  /* A sombra exata que você encontrou na inspeção */
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  
+  /* Garantir que não haja altura mínima forçando o esmagamento */
+  min-height: auto;
 }
 
 .filters-card__header {
+  margin-bottom: 12px; /* Aumentado de 4px para 12px */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
 }
 
 .filters-card__header strong {
-  font-size: 0.96rem;
-  font-weight: 700;
+  /* Ajuste leve para o título ficar imponente como o da tabela */
+  font-size: 1.15rem; 
+  color: #1e293b; /* Tom de slate para combinar com a sombra */
 }
 
-.filters-card__toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  margin-top: -2px;
-  color: #5f6368;
-  cursor: pointer;
-  background: transparent;
-}
-
-.filters-card__toggle svg {
-  width: 18px;
-  height: 18px;
-}
-
+/* Ajuste nos campos para respeitar o novo gap */
 .filters-card__fields {
   display: flex;
-  gap: 16px;
+  gap: 18px; 
   flex-wrap: wrap;
+  align-items: flex-end;
 }
-
 .filters-card__field {
   position: relative;
   display: block;
-  min-width: 0;
-  width: 270px;
+  flex: 1;
+  min-width: 260px; /* Levemente menor para caber melhor em grids */
+  max-width: 400px;
 }
 
 .filters-card__field-label {
@@ -303,43 +247,38 @@
   left: 11px;
   z-index: 1;
   padding: 0 5px;
-  color: rgba(0, 0, 0, 0.55);
+  color: rgba(0, 0, 0, 0.6);
   font-size: 0.76rem;
+  font-weight: 600;
   line-height: 1;
   background: #fff;
 }
 
-.filters-card__input-wrap {
-  position: relative;
+.filters-card__input-wrap input,
+.tce-select--filter {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px 0 42px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
+  color: rgba(0, 0, 0, 0.8);
+  font-size: 0.95rem;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.filters-card__input-wrap input:focus {
+  border-color: var(--brand);
+  outline: none;
 }
 
 .filters-card__input-icon {
   position: absolute;
   top: 50%;
-  left: 13px;
+  left: 14px;
   width: 18px;
   height: 18px;
   color: #757575;
   transform: translateY(-50%);
-}
-
-.filters-card__input-icon svg {
-  display: block;
-  width: 18px;
-  height: 18px;
-}
-
-.filters-card__input-wrap input {
-  width: 100%;
-  min-height: 50px;
-  padding: 0 14px 0 42px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  color: rgba(0, 0, 0, 0.72);
-  font-size: 0.95rem;
-  background: #fff;
-}
-
-.filters-card__input-wrap input::placeholder {
-  color: rgba(0, 0, 0, 0.46);
+  pointer-events: none;
 }

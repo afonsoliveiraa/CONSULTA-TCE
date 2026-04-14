@@ -3,8 +3,12 @@ class BiddingsController < ApplicationController
 
   # GET /biddings
   def index
+    scope = Bidding.all
+    # Filtra por município se o parâmetro estiver presente
+    scope = scope.where(cod_municipio: params[:cod_municipio]) if params[:cod_municipio].present?
+
     # Usa a gem pagy para paginar os resultados
-    @pagy, @biddings = pagy(:offset, Bidding.all)
+    @pagy, @biddings = pagy(scope)
     # utiliza a função do ApplicationController para renderizar a resposta paginada
     render_paginated(@pagy, @biddings)
   end
@@ -25,22 +29,27 @@ class BiddingsController < ApplicationController
     end
   end
 
+  # GET /biddings/processo/:numero_processo
   def show_by_numero_processo
+    scope = Bidding.where(numero_processo: params[:numero_processo])
     
-    if params[:codigo_municipio].present?
-      scope = Bidding.where(numero_processo: params[:numero_processo], cod_municipio: params[:codigo_municipio])
-    else
-      scope = Bidding.where(numero_processo: params[:numero_processo])
+    # Filtro adicional por município se presente
+    if params[:cod_municipio].present?
+      scope = scope.where(cod_municipio: params[:cod_municipio])
     end
 
     if scope.any?
-      @pagy, @biddings = pagy(:offset, scope)
-      # utiliza a função do ApplicationController para renderizar a resposta paginada
+      @pagy, @biddings = pagy(scope)
       render_paginated(@pagy, @biddings)
     else
-      render json: { error: "Nenhuma licitação encontrada para este número de processo" }, status: :not_found
+      render json: { error: "Nenhuma licitação encontrada" }, status: :not_found
     end
-    
+  end
+
+  # GET /biddings/municipios-importados
+  def show_municipios_importados
+    @municipios = Bidding.distinct.order(:cod_municipio).pluck(:cod_municipio)
+    render json: { municipios: @municipios }
   end
 
   private

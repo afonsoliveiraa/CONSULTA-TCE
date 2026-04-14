@@ -9,16 +9,43 @@ interface MainLayoutProps {
   pageTitle?: string;
 }
 
+const SIDEBAR_COMPACT_BREAKPOINT = 980;
+const SIDEBAR_STORAGE_KEY = "consultaTce.sidebarOpen";
+
 const MainLayoutFrame: FunctionalComponent<{ children: ComponentChildren }> = ({ children }) => {
   const pageTitle = usePageTitleSafe();
+  const [isCompactViewport, setIsCompactViewport] = useState(() => window.innerWidth <= SIDEBAR_COMPACT_BREAKPOINT);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
-    const savedValue = window.localStorage.getItem("consultaTce.sidebarOpen");
+    if (window.innerWidth <= SIDEBAR_COMPACT_BREAKPOINT) {
+      return false;
+    }
+
+    const savedValue = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
     return savedValue === "true";
   });
 
   useEffect(() => {
-    window.localStorage.setItem("consultaTce.sidebarOpen", String(sidebarOpen));
-  }, [sidebarOpen]);
+    const syncViewportState = () => {
+      const compactViewport = window.innerWidth <= SIDEBAR_COMPACT_BREAKPOINT;
+      setIsCompactViewport(compactViewport);
+
+      // Em telas menores, a sidebar inicia e volta recolhida para preservar a area util.
+      if (compactViewport) {
+        setSidebarOpen(false);
+      }
+    };
+
+    syncViewportState();
+    window.addEventListener("resize", syncViewportState);
+
+    return () => window.removeEventListener("resize", syncViewportState);
+  }, []);
+
+  useEffect(() => {
+    if (!isCompactViewport) {
+      window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarOpen));
+    }
+  }, [isCompactViewport, sidebarOpen]);
 
   return (
     <div class="app-frame">

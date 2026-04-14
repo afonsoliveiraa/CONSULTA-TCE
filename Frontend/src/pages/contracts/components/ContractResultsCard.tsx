@@ -2,6 +2,7 @@
 
 import { type FunctionalComponent } from "preact";
 import { ColumnsIcon, DownloadIcon, SearchIcon, SortIcon } from "../../../components/GridIcons";
+import type { SortDirection } from "../../../lib/sort";
 import type { Contrato } from "../../../types/contrato";
 import type { ContratoColumnDefinition, ContratoColumnId } from "../contractQuery.types";
 import { formatContratoValue } from "../contractQuery.utils";
@@ -14,11 +15,14 @@ interface ContractResultsCardProps {
   currentPage: number;
   totalItems: number;
   totalPages: number;
+  sortColumnId: ContratoColumnId;
+  sortDirection: SortDirection;
   visibleColumns: ContratoColumnDefinition[];
   dropTargetColumnId: ContratoColumnId | null;
   onQuickSearchChange: (value: string) => void;
   onShowColumnModal: (value: boolean) => void;
   onPageChange: (page: number) => void;
+  onSortChange: (columnId: ContratoColumnId) => void;
   onDragStart: (columnId: ContratoColumnId) => void;
   onDragOver: (event: DragEvent, columnId: ContratoColumnId) => void;
   onDragLeave: (columnId: ContratoColumnId) => void;
@@ -35,11 +39,14 @@ export const ContractResultsCard: FunctionalComponent<ContractResultsCardProps> 
   currentPage,
   totalItems,
   totalPages,
+  sortColumnId,
+  sortDirection,
   visibleColumns = [],      // Default value para evitar undefined
   dropTargetColumnId,
   onQuickSearchChange,
   onShowColumnModal,
   onPageChange,
+  onSortChange,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -98,9 +105,16 @@ export const ContractResultsCard: FunctionalComponent<ContractResultsCardProps> 
                   onDrop={() => onDrop(column.id)}
                   onDragEnd={onDragEnd}
                 >
-                  <button class="grid-demo__sort-button grid-demo__sort-button--active" type="button">
+                  <button
+                    class={`grid-demo__sort-button${sortColumnId === column.id ? " grid-demo__sort-button--active" : ""}`}
+                    type="button"
+                    onClick={() => onSortChange(column.id)}
+                  >
                     <span>{column.label}</span>
-                    <SortIcon active />
+                    <SortIcon
+                      active={sortColumnId === column.id}
+                      direction={sortColumnId === column.id ? sortDirection : "asc"}
+                    />
                   </button>
                 </th>
               ))}

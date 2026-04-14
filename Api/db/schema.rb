@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_11_152204) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_13_143206) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -79,6 +79,33 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_11_152204) do
     t.string "cpf_fiscal"
     t.string "nome_fiscal"
     t.string "id_contrato_pncp"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "vehicles", force: :cascade do |t|
+    t.string "tipo_documento"
+    t.string "cod_municipio"
+    t.string "codigo_renavam"
+    t.string "placa"
+    t.string "chassi_vin"
+    t.string "tipo_documento_proprietario"
+    t.string "documento_proprietario"
+    t.string "nome_razao_social_proprietario"
+    t.string "cidade_emplacamento"
+    t.string "uf_emplacamento"
+    t.integer "ano_fabricacao"
+    t.integer "ano_modelo"
+    t.string "marca"
+    t.string "modelo_versao"
+    t.string "cor_predominante"
+    t.string "tipo_combustivel"
+    t.string "tipo_veiculo"
+    t.string "tipo_vinculacao"
+    t.string "registro_tombo"
+    t.string "situacao_veiculo"
+    t.integer "odometro"
+    t.date "data_referencia_documentacao"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end

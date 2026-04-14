@@ -9,6 +9,8 @@ import { ContractsTopbar } from "./components/ContractsTopbar";
 export const ContractQueryPage: FunctionalComponent = () => {
   const {
     numeroContrato,
+    codigoMunicipio,
+    municipios,
     contratos,
     filteredContratos,
     mensagemConsulta,
@@ -18,12 +20,15 @@ export const ContractQueryPage: FunctionalComponent = () => {
     pageSize,
     totalItems,
     totalPages,
+    sortColumnId,
+    sortDirection,
     showColumnModal,
     columns,
     visibleColumns,
     dropTargetColumnId,
     quickSearch,
     setNumeroContrato,
+    setCodigoMunicipio,
     setQuickSearch,
     setShowColumnModal,
     setDraggingColumnId,
@@ -32,6 +37,7 @@ export const ContractQueryPage: FunctionalComponent = () => {
     handleColumnDrop,
     handleBuscarContrato,
     handlePageChange,
+    handleSortChange,
     handleExportCsv,
   } = useContractQuery();
 
@@ -40,10 +46,13 @@ export const ContractQueryPage: FunctionalComponent = () => {
       <ContractsTopbar currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} />
       <ContractFiltersCard
         numeroContrato={numeroContrato}
+        codigoMunicipio={codigoMunicipio}
+        municipios={municipios}
         mensagemConsulta={mensagemConsulta}
         erroConsulta={erroConsulta ?? ""}        
         carregandoConsulta={carregandoConsulta}
         onNumeroContratoChange={setNumeroContrato}
+        onCodigoMunicipioChange={setCodigoMunicipio}
         onSubmit={handleBuscarContrato}
       />
       <ContractResultsCard
@@ -54,11 +63,14 @@ export const ContractQueryPage: FunctionalComponent = () => {
         currentPage={currentPage}
         totalItems={totalItems}
         totalPages={totalPages}
+        sortColumnId={sortColumnId}
+        sortDirection={sortDirection}
         visibleColumns={visibleColumns}
         dropTargetColumnId={dropTargetColumnId}
         onQuickSearchChange={setQuickSearch}
         onShowColumnModal={setShowColumnModal}
         onPageChange={handlePageChange}
+        onSortChange={handleSortChange}
         onDragStart={setDraggingColumnId}
         onDragOver={(event, columnId) => {
           event.preventDefault();

@@ -4,9 +4,11 @@ class ContractsController < ApplicationController
 
   # GET /contracts
   def index
-    # Usa a gem pagy para paginar os resultados
-    @pagy, @contracts = pagy(:offset, Contract.all)
-    # utiliza a função do ApplicationController para renderizar a resposta paginada
+    scope = Contract.all
+    # Filtra por município se o parâmetro estiver presente
+    scope = scope.where(cod_municipio: params[:cod_municipio]) if params[:cod_municipio].present?
+    
+    @pagy, @contracts = pagy(scope)
     render_paginated(@pagy, @contracts)
   end
 
@@ -30,20 +32,23 @@ class ContractsController < ApplicationController
 
   # GET /contracts/numero/:numero_contrato
   def show_by_numero_contrato
+    scope = Contract.where(numero_contrato: params[:numero_contrato])
     
     if params[:cod_municipio].present?
-      scope = Contract.where(numero_contrato: params.expect(:numero_contrato), cod_municipio: params.expect(:cod_municipio))
-    else  
-      scope = Contract.where(numero_contrato: params.expect(:numero_contrato))
+      scope = scope.where(cod_municipio: params[:cod_municipio])
     end
 
     if scope.any?
       @pagy, @contracts = pagy(scope)
       render_paginated(@pagy, @contracts)
     else
-      render json: { error: "Nenhum contrato encontrado para este número" }, status: :not_found
+      render json: { error: "Nenhum contrato encontrado" }, status: :not_found
     end
-    
+  end
+
+  def show_municipios_importados
+    @municipios = Contract.distinct.pluck(:cod_municipio)
+    render json: { municipios: @municipios }
   end
 
   private

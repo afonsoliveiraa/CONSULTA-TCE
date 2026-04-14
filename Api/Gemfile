@@ -39,6 +39,8 @@ gem 'csv'
 
 gem 'pagy', '~> 43.5' # Omit the patch segment to avoid breaking changes
 
+gem 'httparty'
+
 group :development, :test do
   gem "solargraph"
 

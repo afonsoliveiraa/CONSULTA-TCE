@@ -27,17 +27,18 @@ const menuGroups: { title: string; items: SidebarItem[] }[] = [
       {
         label: processLabel,
         icon: "file",
-        children: [{ label: "Consulta do contrato", href: "/consulta-de-contrato", icon: "search" }],
+        children: [
+          { label: "Consulta do contrato", href: "/consulta-de-contrato", icon: "search" },
+          { label: "Consulta de licitacao", href: "/consulta-de-licitacao", icon: "search" },
+          { label: "Consulta de veiculo", href: "/consulta-de-veiculo", icon: "search" },
+        ],
       },
       {
         label: consultationLabel,
         icon: "search",
         children: [{ label: "API TCE", href: "/api-tce", icon: "search" }],
       },
-      { label: "Unidades Funcionais", href: "#", icon: "bank" },
-      { label: "Documentos", href: "#", icon: "file" },
-      { label: "Relatorios", href: "#", icon: "chart" },
-      { label: "Usuarios", href: "#", icon: "user" },
+      { label: "Análises de Erro", href: "/analyses-ne", icon: "home" },
     ],
   },
 ];
@@ -47,7 +48,11 @@ export const Sidebar: FunctionalComponent<{ open: boolean; onToggle: () => void 
   const [searchTerm, setSearchTerm] = useState("");
 
   // Mantem o submenu de aquisicoes aberto na rota filha ou apos interacao do usuario.
-  const defaultExpanded = currentPath === "/consulta-de-contrato" || currentPath === "/api-tce";
+  const defaultExpanded =
+    currentPath === "/consulta-de-contrato" ||
+    currentPath === "/consulta-de-licitacao" ||
+    currentPath === "/consulta-de-veiculo" ||
+    currentPath === "/api-tce";
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const savedValue = window.localStorage.getItem("consultaTce.sidebarGroups");
 
@@ -60,7 +65,10 @@ export const Sidebar: FunctionalComponent<{ open: boolean; onToggle: () => void 
     }
 
     return {
-      [processLabel]: currentPath === "/consulta-de-contrato",
+      [processLabel]:
+        currentPath === "/consulta-de-contrato" ||
+        currentPath === "/consulta-de-licitacao" ||
+        currentPath === "/consulta-de-veiculo",
       [consultationLabel]: defaultExpanded,
     };
   });

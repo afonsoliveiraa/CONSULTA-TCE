@@ -1,0 +1,10 @@
+.idea/
+ConsultaTCE/wwwroot/
+Frontend/node_modules/
+Frontend/vite.stdout.log
+Frontend/vite.stderr.log
+Api/.bundle-user/
+Api/.local-gems/
+Api/vendor/bundle/
+Api/rails.stdout.log
+Api/rails.stderr.log

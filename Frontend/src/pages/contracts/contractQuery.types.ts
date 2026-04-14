@@ -1,7 +1,6 @@
-// frontend/src/pages/contracts/contractQuery.types.ts
-
 export type ContratoColumnId =
   | "tipo_documento"
+  | "municipality_name"
   | "cod_municipio"
   | "cpf_gestor"
   | "numero_contrato"
@@ -29,11 +28,12 @@ export type ContratoColumnId =
 export interface ContratoColumnDefinition {
   id: ContratoColumnId;
   label: string;
-  active: boolean; // Removido o '?' pois no hook tratamos como obrigatório para o filtro
+  active: boolean;
 }
 
 export interface ContratoFilters {
   tipo_documento: string;
+  municipality_name: string;
   cod_municipio: string;
   cpf_gestor: string;
   numero_contrato: string;

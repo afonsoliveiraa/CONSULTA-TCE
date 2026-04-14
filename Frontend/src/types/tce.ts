@@ -1,4 +1,3 @@
-// Campo individual retornado pelo catalogo do backend para montar o formulario dinamico.
 export interface TceEndpointField {
   name: string;
   label: string;
@@ -13,23 +12,13 @@ export interface TceColumnDefinition {
   active?: boolean;
 }
 
-// Endpoint exibido no seletor da tela "API TCE".
-export interface TceEndpoint {
-  key: string;
-  path: string;
-  category: string;
-  description: string;
-  requiredFields: TceEndpointField[];
-  optionalFields: TceEndpointField[];
-}
-
-// Opcao exibida no seletor de municipios.
 export interface TceMunicipalityOption {
-  code: string;
-  name: string;
+  codigo_municipio: string; 
+  nome_municipio: string;
+  geoibgeId?: string | null;
+  geonamesId?: string | null;
 }
 
-// Bloco de paginacao devolvido pela API interna.
 export interface TceQueryPagination {
   page: number;
   pageSize: number;
@@ -38,7 +27,6 @@ export interface TceQueryPagination {
   hasMorePages: boolean;
 }
 
-// Resultado generico da consulta para qualquer endpoint do TCE-CE.
 export interface TceQueryResult {
   endpointKey: string;
   endpointPath: string;
@@ -46,7 +34,7 @@ export interface TceQueryResult {
   municipalityName: string;
   sourceUrl: string;
   columns: string[];
-  items: Record<string, string>[];
+  items: Record<string, any>[];
   metadata: Record<string, string>;
   pagination: TceQueryPagination;
 }

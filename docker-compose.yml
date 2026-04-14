@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: consulta-tce-db
+    environment:
+      POSTGRES_DB: consulta_tce_development
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d consulta_tce_development"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./Api
+      dockerfile: Dockerfile.dev
+    container_name: consulta-tce-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: development
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: consulta_tce_development
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      X_API_KEY: ChaveLocal123!
+      RAILS_MAX_THREADS: 5
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile.dev
+    container_name: consulta-tce-frontend
+    depends_on:
+      - api
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000
+      VITE_APP_SECRET: ChaveLocal123!
+      FRONTEND_PORT: 5173
+      BACKEND_URL: http://api:3000
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
