@@ -272,6 +272,18 @@
   outline: none;
 }
 
+.filters-card__input-wrap select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.filters-card__input-wrap select:focus,
+.tce-select--filter:focus {
+  border-color: var(--brand);
+  outline: none;
+}
+
 .filters-card__input-icon {
   position: absolute;
   top: 50%;

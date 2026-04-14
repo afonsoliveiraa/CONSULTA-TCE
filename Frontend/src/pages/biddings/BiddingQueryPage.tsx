@@ -43,7 +43,7 @@ export const BiddingQueryPage: FunctionalComponent = () => {
 
   return (
     <>
-      <BiddingsTopbar currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} />
+      <BiddingsTopbar />
 
       <BiddingFiltersCard
         numeroProcesso={numeroProcesso}

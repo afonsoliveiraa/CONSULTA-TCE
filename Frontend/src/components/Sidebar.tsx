@@ -5,7 +5,7 @@ import { Icon, type IconName } from "./Icon";
 interface SidebarChildItem {
   label: string;
   href: string;
-  icon: IconName;
+  icon?: IconName;
 }
 
 interface SidebarItem {
@@ -28,9 +28,9 @@ const menuGroups: { title: string; items: SidebarItem[] }[] = [
         label: processLabel,
         icon: "file",
         children: [
-          { label: "Consulta do contrato", href: "/consulta-de-contrato", icon: "search" },
-          { label: "Consulta de licitacao", href: "/consulta-de-licitacao", icon: "search" },
-          { label: "Consulta de veiculo", href: "/consulta-de-veiculo", icon: "search" },
+          { label: "Consulta do contrato", href: "/consulta-de-contrato" },
+          { label: "Consulta de licitacao", href: "/consulta-de-licitacao" },
+          { label: "Consulta de veiculo", href: "/consulta-de-veiculo" },
         ],
       },
       {
@@ -195,9 +195,11 @@ export const Sidebar: FunctionalComponent<{ open: boolean; onToggle: () => void 
                             href={child.href}
                             title={child.label}
                           >
-                            <span class="sidebar-link__icon">
-                              <Icon name={child.icon} className="sidebar-svg-icon" />
-                            </span>
+                            {child.icon ? (
+                              <span class="sidebar-link__icon">
+                                <Icon name={child.icon} className="sidebar-svg-icon" />
+                              </span>
+                            ) : null}
                             <span class="sidebar-link__label">{child.label}</span>
                           </a>
                         ))}

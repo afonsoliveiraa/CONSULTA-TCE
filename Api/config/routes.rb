@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   end
 
   # Api TCE dinamica
+  get 'tce/endpoints', to: 'tce_api#endpoints'
   # Rota para pegar os parâmetros e documentação
   get 'tce/definitions/*endpoint', to: 'tce_api#definitions'
   # Rota para buscar os dados reais
