@@ -7,7 +7,8 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
     allow do
-        origins ['localhost:5173', '127.0.0.1:5173', 'localhost:3000']
+        # Mantem o frontend local e o frontend Dockerizado autorizados a consumir a API.
+        origins "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://frontend:5173"
 
         resource "*",
         headers: :any,

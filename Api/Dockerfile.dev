@@ -1,0 +1,22 @@
+FROM ruby:3.4.5-slim
+
+WORKDIR /app
+
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config postgresql-client curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# O Gemfile.lock exige essa versao de Bundler para resolver as gems corretamente.
+RUN gem install bundler:2.7.1
+
+COPY Gemfile Gemfile.lock ./
+RUN bundle _2.7.1_ install
+
+COPY . .
+
+RUN chmod +x bin/* && \
+    sed -i "s/\r$//g" bin/*
+
+EXPOSE 3000
+
+CMD ["bash", "-lc", "bundle _2.7.1_ exec rails db:prepare && bundle _2.7.1_ exec rails server -b 0.0.0.0 -p 3000"]

@@ -14,9 +14,17 @@ require "action_view/railtie"
 require "action_cable/engine"
 # require "rails/test_unit/railtie"
 
-# Require the gems listed in Gemfile, including any gems
-# you've limited to :test, :development, or :production.
-Bundler.require(*Rails.groups)
+# Require the gems listed in Gemfile. When `SKIP_OPTIONAL_BUNDLER_GROUPS=1`,
+# allow the app to boot without loading development/test-only tooling.
+bundler_groups = Rails.groups
+
+if ENV["SKIP_OPTIONAL_BUNDLER_GROUPS"] == "1"
+  bundler_groups = bundler_groups.reject do |group|
+    %w[development test].include?(group.to_s)
+  end
+end
+
+Bundler.require(*bundler_groups)
 
 module ConsultaTce
   class Application < Rails::Application
