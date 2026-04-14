@@ -89,10 +89,13 @@
   gap: 8px;
   min-height: 34px;
   padding: 0 14px;
+  border: 0;
   color: #334155;
+  background: transparent;
+  cursor: pointer;
 }
 
-.contracts-step + .contracts-step {
+.contracts-step+.contracts-step {
   border-left: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -111,6 +114,11 @@
 .contracts-step strong {
   font-size: 0.95rem;
   font-weight: 600;
+}
+
+.contracts-step:disabled {
+  cursor: not-allowed;
+  opacity: 1;
 }
 
 .contracts-grid {
@@ -920,9 +928,36 @@
   align-items: center;
 }
 
-.analysis-steps .contracts-step.is-active {
+.analysis-steps .contracts-step {
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.analysis-steps .contracts-step.is-pending {
+  color: #7f1d1d;
+  background: rgba(254, 242, 242, 0.72);
+}
+
+.analysis-steps .contracts-step.is-pending span {
+  background: #dc2626;
+}
+
+.analysis-steps .contracts-step.is-completed {
+  color: #005f73;
+  background: rgba(0, 95, 115, 0.08);
+}
+
+.analysis-steps .contracts-step.is-completed span {
+  background: var(--brand);
+}
+
+.analysis-steps .contracts-step[aria-current="step"] {
   color: #0f172a;
-  background: rgba(15, 118, 110, 0.04);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.analysis-steps .contracts-step.is-completed[aria-current="step"] {
+  color: #005f73;
+  background: rgba(0, 95, 115, 0.12);
 }
 
 .analysis-step-summary {
@@ -1083,12 +1118,70 @@
 
 .analysis-dropzone {
   min-height: 0;
+  padding: 16px 18px;
+}
+
+.analysis-dropzone .contracts-dropzone__header {
+  margin-bottom: 12px;
+}
+
+.analysis-dropzone .contracts-dropzone__header-copy {
+  gap: 2px;
+}
+
+.analysis-dropzone .contracts-dropzone__header-copy strong {
+  font-size: 0.98rem;
+}
+
+.analysis-dropzone .contracts-dropzone__body {
+  gap: 10px;
+}
+
+.analysis-dropzone .contracts-dropzone__headline {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.analysis-dropzone .contracts-dropzone__actions {
+  gap: 10px;
+  align-items: center;
+}
+
+.analysis-dropzone .contracts-button--picker {
+  min-height: 38px;
+}
+
+.analysis-dropzone .contracts-dropzone__hint {
+  font-size: 0.88rem;
 }
 
 .analysis-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.analysis-results-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.analysis-results-toolbar--top {
+  margin-bottom: 10px;
+}
+
+.analysis-results-toolbar__copy h2 {
+  margin: 0;
+  font-size: 1.18rem;
+  color: #0f172a;
+}
+
+.analysis-results-toolbar__copy p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .analysis-metric small,
@@ -1113,7 +1206,7 @@
 }
 
 .analysis-result-card--open {
-  border-color: rgba(10, 147, 150, 0.22);
+  border-color: rgba(15, 23, 42, 0.18);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
@@ -1132,7 +1225,7 @@
 }
 
 .analysis-result-card__line {
-  color: var(--brand);
+  color: #000;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -1179,8 +1272,22 @@
 }
 
 .analysis-compare-card.is-divergent {
-  border-color: rgba(220, 38, 38, 0.16);
-  background: rgba(254, 242, 242, 0.72);
+  border-color: rgba(185, 28, 28, 0.4);
+  background:
+    linear-gradient(180deg, rgba(254, 226, 226, 0.98) 0%, rgba(254, 242, 242, 0.96) 100%);
+  box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.08);
+}
+
+.analysis-compare-card.is-divergent .analysis-compare-card__label {
+  color: #991b1b;
+}
+
+.analysis-compare-card.is-divergent .analysis-compare-card__values span {
+  color: #b91c1c;
+}
+
+.analysis-compare-card.is-divergent .analysis-compare-card__values strong {
+  color: #7f1d1d;
 }
 
 .analysis-compare-card__values {
@@ -1210,7 +1317,7 @@
 }
 
 .analysis-status-badge.is-match {
-  color: #166534;
+  color: #18532f;
   background: #dcfce7;
 }
 
@@ -1220,6 +1327,7 @@
 }
 
 @media (max-width: 1080px) {
+
   .analysis-overview-grid,
   .analysis-result-card__grid {
     grid-template-columns: 1fr;

@@ -1,5 +1,6 @@
 import { type FunctionalComponent } from "preact";
 import { useMemo, useRef, useState } from "preact/hooks";
+import { DownloadIcon } from "../components/GridIcons";
 import { analisarArquivoNE } from "../services/analysesApi";
 
 type AnalysisStep = 1 | 2 | 3;
@@ -58,7 +59,15 @@ const formatFileSize = (file: File | null) => {
   return `${(sizeInKb / 1024).toFixed(2)} MB`;
 };
 
+const escapeCsvValue = (value: string) => `"${value.replaceAll('"', '""')}"`;
+
 export const AnalysisNEPage: FunctionalComponent = () => {
+  const stepItems: Array<{ id: AnalysisStep; label: string }> = [
+    { id: 1, label: "Linhas" },
+    { id: 2, label: "Arquivo" },
+    { id: 3, label: "Resultado" },
+  ];
+
   const inputArquivoRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<AnalysisStep>(1);
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -151,6 +160,79 @@ export const AnalysisNEPage: FunctionalComponent = () => {
   const resultadosComContrato = resultados.filter((resultado) => (resultado.contracts?.length || 0) > 0).length;
   const resultadosSemContrato = resultados.length - resultadosComContrato;
 
+  const getStepState = (stepId: AnalysisStep) => {
+    if (step === 3) {
+      return "is-completed";
+    }
+
+    if (stepId < step) {
+      return "is-completed";
+    }
+
+    return "is-pending";
+  };
+
+  const canNavigateToStep = (stepId: AnalysisStep) => {
+    if (stepId === 1) {
+      return true;
+    }
+
+    if (stepId === 2) {
+      return linhasNormalizadas.length > 0 || step >= 2;
+    }
+
+    return resultados.length > 0 || step >= 3;
+  };
+
+  const handleExportCsv = () => {
+    if (!resultados.length) {
+      return;
+    }
+
+    const csvHeader = [
+      "linha",
+      "municipio",
+      "status_contrato",
+      "numero_contrato_arquivo",
+      "numero_contrato_sistema",
+      "numero_contrato_divergente",
+      "cpf_gestor_arquivo",
+      "cpf_gestor_sistema",
+      "cpf_gestor_divergente",
+      "data_assinatura_arquivo",
+      "data_assinatura_sistema",
+      "data_assinatura_divergente",
+    ].map(escapeCsvValue).join(";");
+
+    const csvRows = resultados.map((resultado) => {
+      const contratoBase = resultado.contracts?.[0] || {};
+      const semContrato = (resultado.contracts?.length || 0) === 0;
+
+      return [
+        String(resultado.line_number),
+        resultado.data?.cod_municipio || "",
+        semContrato ? "Sem contrato" : "Contrato localizado",
+        resultado.data?.numero_contrato || "",
+        contratoBase.numero_contrato || "",
+        compararValores(resultado.data?.numero_contrato, contratoBase.numero_contrato, "texto") ? "Nao" : "Sim",
+        resultado.data?.cpf_gestor_contrato || "",
+        contratoBase.cpf_gestor || "",
+        compararValores(resultado.data?.cpf_gestor_contrato, contratoBase.cpf_gestor, "cpf") ? "Nao" : "Sim",
+        formatDate(resultado.data?.data_assinatura_contrato),
+        formatDate(contratoBase.data_assinatura),
+        compararValores(resultado.data?.data_assinatura_contrato, contratoBase.data_assinatura, "data") ? "Nao" : "Sim",
+      ].map((value) => escapeCsvValue(String(value))).join(";");
+    });
+
+    const blob = new Blob([[csvHeader, ...csvRows].join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `analise_divergencias_${Date.now()}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const renderComparisonField = (
     label: string,
     valorArquivo: unknown,
@@ -190,37 +272,59 @@ export const AnalysisNEPage: FunctionalComponent = () => {
         </div>
 
         <div class="contracts-steps analysis-steps">
-          <div class={`contracts-step${step >= 1 ? " is-active" : ""}`}>
-            <span>1</span>
-            <strong>Linhas</strong>
-          </div>
-          <div class={`contracts-step${step >= 2 ? " is-active" : ""}`}>
-            <span>2</span>
-            <strong>Arquivo</strong>
-          </div>
-          <div class={`contracts-step${step >= 3 ? " is-active" : ""}`}>
-            <span>3</span>
-            <strong>Resultado</strong>
-          </div>
+          {stepItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              class={`contracts-step ${getStepState(item.id)}`}
+              disabled={!canNavigateToStep(item.id)}
+              aria-current={step === item.id ? "step" : undefined}
+              onClick={() => {
+                if (canNavigateToStep(item.id)) {
+                  setStep(item.id);
+                }
+              }}
+            >
+              <span>{item.id}</span>
+              <strong>{item.label}</strong>
+            </button>
+          ))}
         </div>
       </div>
 
       <div class="contracts-grid contracts-grid--single">
         <article class="contracts-card">
-          <div class="contracts-card__header">
-            <div>
-              <h2>
-                {step === 1 ? "Defina as linhas com erro" : step === 2 ? "Anexe o arquivo para validacao" : "Resultado da analise"}
-              </h2>
-              <p class="contracts-card__subtitle">
-                {step === 1
-                  ? "Informe linhas isoladas ou intervalos. Exemplo: 113, 150, 201-205."
-                  : step === 2
-                    ? "Carregue o arquivo .DCD que sera confrontado com a base interna de contratos."
-                    : "Expanda cada linha para ver os campos comparados entre arquivo e sistema."}
-              </p>
+          {step === 3 ? (
+            <div class="analysis-results-toolbar analysis-results-toolbar--top">
+              <div class="analysis-results-toolbar__copy">
+                <h2>Resultado da analise</h2>
+                <p>Expanda cada linha para ver os campos comparados entre arquivo e sistema.</p>
+              </div>
+              <div class="grid-demo__toolbar contracts-results__toolbar">
+                <div class="grid-demo__toolbar-buttons">
+                  <button class="grid-demo__text-button" type="button" onClick={handleExportCsv}>
+                    <span class="grid-demo__toolbar-icon contracts-results__action-icon" aria-hidden="true">
+                      <DownloadIcon />
+                    </span>
+                    Exportar CSV
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : null}
+
+          {step !== 3 ? (
+            <div class="contracts-card__header">
+              <div>
+                <h2>{step === 1 ? "Defina as linhas com erro" : "Anexe o arquivo para validacao"}</h2>
+                <p class="contracts-card__subtitle">
+                  {step === 1
+                    ? "Informe linhas isoladas ou intervalos. Exemplo: 113, 150, 201-205."
+                    : "Carregue o arquivo .DCD que sera confrontado com a base interna de contratos."}
+                </p>
+              </div>
+            </div>
+          ) : null}
 
           {step === 1 ? (
             <div class="contracts-form analysis-form">
@@ -305,11 +409,7 @@ export const AnalysisNEPage: FunctionalComponent = () => {
 
                 <div class="contracts-dropzone__body">
                   <p class="contracts-dropzone__headline">
-                    {arquivo ? "Arquivo pronto para analise" : "Use a mesma base enviada para processamento interno."}
-                  </p>
-                  <p class="contracts-dropzone__description">
-                    O sistema ira cruzar o numero do contrato, CPF do gestor e data de assinatura com os dados
-                    encontrados na base.
+                    {arquivo ? "Arquivo pronto para analise" : "Envie um arquivo .DCD para validacao."}
                   </p>
                   <div class="contracts-dropzone__actions">
                     <button type="button" class="contracts-button contracts-button--picker">
