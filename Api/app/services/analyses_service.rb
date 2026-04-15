@@ -46,7 +46,6 @@ class AnalysesService
                 )
             end
         end
-        puts results
         results
     end
 

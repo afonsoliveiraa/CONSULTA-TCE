@@ -68,14 +68,16 @@ export async function buscarVeiculos(
   page = 1,
 ): Promise<VehiclePagedResult> {
   try {
-    const url = placaOuRenavam?.trim() 
-      ? `/vehicles/placa-renavam/${encodeURIComponent(placaOuRenavam.trim())}` 
-      : "/vehicles";
+    // Rota unificada, seguindo o padrão de biddings e contracts
+    const url = "/vehicles";
 
     const response = await api.get(url, {
       params: {
+        // O identificador passa a ser um parâmetro de busca opcional
+        placa_ou_renavam: placaOuRenavam?.trim() || undefined,
         cod_municipio: codMunicipio?.trim() || undefined,
-        "page[page]": page, // <--- ALTERE AQUI para ficar igual ao Contracts
+        // Paginação padronizada
+        "page[page]": page,
       },
     });
 

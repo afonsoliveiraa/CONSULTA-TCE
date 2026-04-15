@@ -102,18 +102,24 @@ export async function buscarContratos(
   codMunicipio?: string,
   page = 1
 ): Promise<ContratoPagedResult> {
-  const url = numeroContrato?.trim() 
-    ? `/contracts/numero/${encodeURIComponent(numeroContrato.trim())}` 
-    : "/contracts";
+  try {
+    // Unificado para a rota base, seguindo o padrão de biddings
+    const url = "/contracts";
 
-  const response = await api.get(url, {
-    params: {
-      cod_municipio: codMunicipio?.trim() || undefined,
-      "page[page]": page 
-    },
-  });
+    const response = await api.get(url, {
+      params: {
+        // O número do contrato agora vai como query param
+        numero_contrato: numeroContrato?.trim() || undefined,
+        cod_municipio: codMunicipio?.trim() || undefined,
+        "page[page]": page,
+      },
+    });
 
-  return response.data;
+    return response.data;
+  } catch (error) {
+    // Adicionado o bloco try/catch com o extrator de erro para manter a consistência
+    throw new Error(extractApiErrorMessage(error, "Erro ao buscar contratos."));
+  }
 }
 
 /**
