@@ -14,29 +14,24 @@ export interface BiddingPagedResult {
   };
 }
 
+// Centraliza a consulta de licitacoes para manter o contrato do hook enxuto.
 export async function buscarLicitacoes(
   numeroProcesso?: string,
   codigoMunicipio?: string,
   page = 1,
 ): Promise<BiddingPagedResult> {
-  try {
-    // Unificado para a rota base
-    const url = "/biddings";
+  const url = numeroProcesso?.trim()
+    ? `/biddings/numero/${encodeURIComponent(numeroProcesso.trim())}`
+    : "/biddings";
 
-    const response = await api.get(url, {
-      params: {
-        // Agora o número do processo vai como query param
-        numero_processo: numeroProcesso?.trim() || undefined,
-        codigo_municipio: codigoMunicipio?.trim() || undefined,
-        // Mantendo o padrão de objeto para a paginação
-        "page[page]": page,
-      },
-    });
+  const response = await api.get(url, {
+    params: {
+      codigo_municipio: codigoMunicipio?.trim() || undefined,
+      "page[page]": page,
+    },
+  });
 
-    return response.data;
-  } catch (error) {
-    throw new Error(extractApiErrorMessage(error, "Erro ao buscar licitações."));
-  }
+  return response.data;
 }
 
 // services/biddingsApi.ts

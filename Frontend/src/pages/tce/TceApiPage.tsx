@@ -1,86 +1,129 @@
 import { type FunctionalComponent } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 import { useTceQuery } from "../../hooks/useTceQuery";
+import { TceColumnsModal } from "./components/TceColumnsModal";
+import { TceFiltersCard } from "./components/TceFiltersCard";
+import { TceResultsCard } from "./components/TceResultsCard";
+import { TceTopbar } from "./components/TceTopbar";
 
 export const TceApiPage: FunctionalComponent = () => {
+  const resultsRef = useRef<HTMLElement | null>(null);
+  const previousPageRef = useRef(1);
   const {
-    municipalities, categories, filteredEndpoints,
-    selectedCategory, setSelectedCategory,
-    selectedPath, setSelectedPath,
-    selectedMunicipalityCode, setSelectedMunicipalityCode,
-    endpointSummary, dynamicParameters, formValues,
-    loadingQuery, setFieldValue, handleSubmit
+    municipalities,
+    endpoints,
+    pagination,
+    selectedPath,
+    setSelectedPath,
+    selectedMunicipalityCode,
+    setSelectedMunicipalityCode,
+    endpointSummary,
+    dynamicParameters,
+    formValues,
+    loadingQuery,
+    errorQuery,
+    messageQuery,
+    result,
+    quickSearch,
+    columns,
+    visibleColumns,
+    filteredItems,
+    pagedItems,
+    showColumnModal,
+    dropTargetColumnId,
+    sortColumnId,
+    sortDirection,
+    selectedEndpoint,
+    setFieldValue,
+    setQuickSearch,
+    setShowColumnModal,
+    setDraggingColumnId,
+    setDropTargetColumnId,
+    setCurrentPage,
+    setColumnVisibility,
+    handleSubmit,
+    handleSortChange,
+    handleColumnDrop,
+    handleExportCsv,
   } = useTceQuery();
 
-  const renderField = (f: any) => (
-    <label key={f.name} class="filters-card__field tce-field">
-      <span class="filters-card__field-label">{f.label || f.name}</span>
-      <div class="filters-card__input-wrap">
-        <input 
-          type={f.name.includes("data") ? "date" : "text"} 
-          value={formValues[f.name] ?? ""} 
-          onInput={(e) => setFieldValue(f.name, e.currentTarget.value)} 
-          placeholder={f.description}
-        />
-      </div>
-    </label>
-  );
+  useEffect(() => {
+    if (previousPageRef.current !== pagination.currentPage) {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    previousPageRef.current = pagination.currentPage;
+  }, [pagination.currentPage]);
 
   return (
-    <form onSubmit={handleSubmit} class="contracts-filters-form">
-      <article class="filters-card">
-        <div class="filters-card__header">
-          <strong>Parâmetros de Consulta</strong>
-          <p style={{ fontSize: '11px', opacity: 0.7 }}>{endpointSummary}</p>
-        </div>
+    <>
+      <TceTopbar
+      />
 
-        <div class="filters-card__fields tce-fields-grid">
-          {/* 1. Município */}
-          <label class="filters-card__field tce-field">
-            <span class="filters-card__field-label">Município</span>
-            <div class="filters-card__input-wrap">
-              <select value={selectedMunicipalityCode} onChange={e => setSelectedMunicipalityCode(e.currentTarget.value)}>
-                <option value="">Selecione...</option>
-                {municipalities.map(m => (
-                  <option key={m.codigo_municipio} value={m.codigo_municipio}>{m.nome_municipio}</option>
-                ))}
-              </select>
-            </div>
-          </label>
+      <TceFiltersCard
+        municipalities={municipalities}
+        endpoints={endpoints}
+        selectedMunicipalityCode={selectedMunicipalityCode}
+        selectedPath={selectedPath}
+        endpointSummary={endpointSummary}
+        dynamicParameters={dynamicParameters}
+        formValues={formValues}
+        loadingQuery={loadingQuery}
+        messageQuery={messageQuery}
+        errorQuery={errorQuery}
+        onMunicipalityChange={setSelectedMunicipalityCode}
+        onPathChange={setSelectedPath}
+        onFieldChange={setFieldValue}
+        onSubmit={handleSubmit}
+      />
 
-          {/* 2. Assunto (Categoria/Tag) */}
-          <label class="filters-card__field tce-field">
-            <span class="filters-card__field-label">Assunto</span>
-            <div class="filters-card__input-wrap">
-              <select value={selectedCategory} onChange={e => setSelectedCategory(e.currentTarget.value)}>
-                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-              </select>
-            </div>
-          </label>
+      <section ref={resultsRef}>
+        <TceResultsCard
+          endpointLabel={selectedEndpoint?.label ?? "Consulta"}
+          endpointPath={selectedPath}
+          sourceUrl={result?.source_url ?? ""}
+          loadingQuery={loadingQuery}
+          messageQuery={messageQuery}
+          errorQuery={errorQuery}
+          quickSearch={quickSearch}
+          currentPage={pagination.currentPage}
+          totalItems={filteredItems.length}
+          totalPages={pagination.totalPages}
+          visibleColumns={visibleColumns}
+          pagedItems={pagedItems}
+          sortColumnId={sortColumnId}
+          sortDirection={sortDirection}
+          dropTargetColumnId={dropTargetColumnId}
+          onQuickSearchChange={setQuickSearch}
+          onShowColumnModal={() => setShowColumnModal(true)}
+          onPageChange={setCurrentPage}
+          onSortChange={handleSortChange}
+          onDragStart={setDraggingColumnId}
+          onDragOver={(event, columnId) => {
+            event.preventDefault();
+            setDropTargetColumnId(columnId);
+          }}
+          onDragLeave={(columnId) => {
+            if (dropTargetColumnId === columnId) {
+              setDropTargetColumnId(null);
+            }
+          }}
+          onDrop={handleColumnDrop}
+          onDragEnd={() => {
+            setDraggingColumnId(null);
+            setDropTargetColumnId(null);
+          }}
+          onExportCsv={handleExportCsv}
+        />
+      </section>
 
-          {/* 3. Endpoint (O serviço dentro do assunto) */}
-          <label class="filters-card__field tce-field">
-            <span class="filters-card__field-label">Serviço</span>
-            <div class="filters-card__input-wrap">
-              <select value={selectedPath} onChange={e => setSelectedPath(e.currentTarget.value)}>
-                {filteredEndpoints.map(ep => (
-                  <option key={ep.path} value={ep.path}>{ep.label}</option>
-                ))}
-              </select>
-            </div>
-          </label>
-        </div>
-
-        <div class="filters-card__fields tce-fields-grid" style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1.5rem' }}>
-          {/* Campos dinâmicos do endpoint selecionado */}
-          {dynamicParameters.map(renderField)}
-          
-          <div class="tce-action-container">
-            <button class="contracts-button" type="submit" disabled={loadingQuery}>
-              {loadingQuery ? "Consultando..." : "Consultar"}
-            </button>
-          </div>
-        </div>
-      </article>
-    </form>
+      {showColumnModal ? (
+        <TceColumnsModal
+          columns={columns}
+          onClose={() => setShowColumnModal(false)}
+          onColumnVisibilityChange={setColumnVisibility}
+        />
+      ) : null}
+    </>
   );
 };

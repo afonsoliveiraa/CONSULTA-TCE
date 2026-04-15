@@ -1,13 +1,12 @@
-import { useState, useMemo, useCallback, useEffect } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { sortCollectionByField, type SortDirection } from "../lib/sort";
 import { buscarVeiculos, getMunicipiosVeiculos } from "../services/vehiclesApi";
 import { vehicleColumns } from "../pages/vehicles/vehicleQuery.constants";
-import type { Vehicle } from "../types/vehicle";
 import type { VehicleColumnId } from "../pages/vehicles/vehicleQuery.types";
+import type { Vehicle } from "../types/vehicle";
 import type { TceMunicipalityOption } from "../types/tce";
 
 export function useVehicleQuery() {
-  // --- Estados de Dados ---
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [municipios, setMunicipios] = useState<TceMunicipalityOption[]>([]);
   const [placaOuRenavam, setPlacaOuRenavam] = useState("");
@@ -16,25 +15,23 @@ export function useVehicleQuery() {
   const [sortColumnId, setSortColumnId] = useState<VehicleColumnId>("placa");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  // --- Estados de Colunas e Paginação ---
   const [columns, setColumns] = useState(vehicleColumns);
+  const [draggingColumnId, setDraggingColumnId] = useState<VehicleColumnId | null>(null);
+  const [dropTargetColumnId, setDropTargetColumnId] = useState<VehicleColumnId | null>(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  // --- Estados de UI ---
   const [carregandoConsulta, setCarregandoConsulta] = useState(false);
   const [erroConsulta, setErroConsulta] = useState<string | null>(null);
   const [mensagemConsulta, setMensagemConsulta] = useState("");
+  const [showColumnModal, setShowColumnModal] = useState(false);
 
-  /**
-   * Carrega os municípios disponíveis para filtro ao montar o componente.
-   */
   useEffect(() => {
     const carregarMunicipios = async () => {
       try {
         const codigos = await getMunicipiosVeiculos();
-        
         const opcoes: TceMunicipalityOption[] = codigos.map((codigo) => ({
           label: String(codigo),
           value: String(codigo),
@@ -44,77 +41,62 @@ export function useVehicleQuery() {
 
         setMunicipios(opcoes);
       } catch (err) {
-        console.error("Erro ao carregar municípios:", err);
+        console.error("Erro ao carregar municipios:", err);
         setMunicipios([]);
       }
     };
+
     carregarMunicipios();
   }, []);
 
-  /**
-   * Filtra as colunas ativas para exibição na tabela.
-   */
-  const visibleColumns = useMemo(() => 
-    columns.filter((col) => col.active), 
-  [columns]);
+  const visibleColumns = useMemo(() => columns.filter((column) => column.active), [columns]);
 
-  /**
-   * Lógica de busca rápida local na tabela e ordenação.
-   */
   const filteredVehicles = useMemo(() => {
     const searchTerm = quickSearch.toLowerCase().trim();
-    const normalized = !searchTerm
+    const normalizedVehicles = !searchTerm
       ? vehicles
-      : vehicles.filter((v) =>
-          Object.values(v).some((val) => 
-            String(val).toLowerCase().includes(searchTerm)
-          )
+      : vehicles.filter((vehicle) =>
+          Object.values(vehicle).some((value) => String(value).toLowerCase().includes(searchTerm)),
         );
 
-    // Casting duplo para evitar erro de overlap do TypeScript
     return sortCollectionByField(
-      normalized as unknown as Record<string, unknown>[],
+      normalizedVehicles as unknown as Record<string, unknown>[],
       sortColumnId,
       sortDirection,
     ) as unknown as Vehicle[];
   }, [vehicles, quickSearch, sortColumnId, sortDirection]);
 
-  /**
-   * Função principal de carregamento de dados via API.
-   * Agora preparada para a rota: /vehicles/placa_renavam/:numero
-   */
-  const carregarDados = useCallback(async (page: number) => {
-    setCarregandoConsulta(true);
-    setErroConsulta(null);
+  const carregarDados = useCallback(
+    async (page: number) => {
+      setCarregandoConsulta(true);
+      setErroConsulta(null);
 
-    try {
-      // O campo placaOuRenavam será usado como o parâmetro :numero da sua rota Rails
-      const response = await buscarVeiculos(placaOuRenavam, codigoMunicipio, page);
+      try {
+        const response = await buscarVeiculos(placaOuRenavam, codigoMunicipio, page);
 
-      setVehicles(response.data || []);
-      setCurrentPage(response.pagination.page);
-      setTotalItems(response.pagination.count);
-      setTotalPages(response.pagination.last);
+        setVehicles(response.data || []);
+        setCurrentPage(response.pagination.page);
+        setTotalItems(response.pagination.count);
+        setTotalPages(response.pagination.last);
 
-      setMensagemConsulta(
-        placaOuRenavam || codigoMunicipio
-          ? `${response.pagination.count} resultados encontrados.`
-          : `Total de ${response.pagination.count} veículos carregados.`
-      );
-    } catch (err: any) {
-      setErroConsulta(err.message || "Erro ao conectar com o servidor.");
-      setVehicles([]);
-      setMensagemConsulta("");
-    } finally {
-      setCarregandoConsulta(false);
-    }
-  }, [codigoMunicipio, placaOuRenavam]);
+        setMensagemConsulta(
+          placaOuRenavam || codigoMunicipio
+            ? `${response.pagination.count} resultados encontrados.`
+            : `Total de ${response.pagination.count} veiculos carregados.`,
+        );
+      } catch (err: any) {
+        setErroConsulta(err.message || "Erro ao conectar com o servidor.");
+        setVehicles([]);
+        setMensagemConsulta("");
+      } finally {
+        setCarregandoConsulta(false);
+      }
+    },
+    [codigoMunicipio, placaOuRenavam],
+  );
 
-  /**
-   * Handlers de interação do usuário
-   */
-  const handleBuscarVeiculo = async (e: Event) => {
-    e.preventDefault();
+  const handleBuscarVeiculo = async (event: Event) => {
+    event.preventDefault();
     await carregarDados(1);
   };
 
@@ -125,17 +107,46 @@ export function useVehicleQuery() {
 
   const handleSortChange = (columnId: VehicleColumnId) => {
     if (sortColumnId === columnId) {
-      setSortDirection((curr) => (curr === "asc" ? "desc" : "asc"));
+      setSortDirection((currentDirection) => (currentDirection === "asc" ? "desc" : "asc"));
       return;
     }
+
     setSortColumnId(columnId);
     setSortDirection("asc");
   };
 
   const setColumnVisibility = (columnId: string, active: boolean) => {
-    setColumns((prev) =>
-      prev.map((col) => (col.id === columnId ? { ...col, active } : col))
+    setColumns((currentColumns) =>
+      currentColumns.map((column) => (column.id === columnId ? { ...column, active } : column)),
     );
+  };
+
+  const handleColumnDrop = (targetColumnId: VehicleColumnId) => {
+    if (!draggingColumnId || draggingColumnId === targetColumnId) {
+      return;
+    }
+
+    setColumns((currentColumns) => {
+      const nextColumns = [...currentColumns];
+      const draggedIndex = nextColumns.findIndex((column) => column.id === draggingColumnId);
+      const targetIndex = nextColumns.findIndex((column) => column.id === targetColumnId);
+
+      if (draggedIndex === -1 || targetIndex === -1) {
+        return currentColumns;
+      }
+
+      const [removedColumn] = nextColumns.splice(draggedIndex, 1);
+      nextColumns.splice(targetIndex, 0, removedColumn);
+
+      return nextColumns;
+    });
+
+    setDraggingColumnId(null);
+    setDropTargetColumnId(null);
+  };
+
+  const handleExportCsv = () => {
+    console.log("Exportando veiculos para CSV...");
   };
 
   return {
@@ -156,12 +167,19 @@ export function useVehicleQuery() {
     sortDirection,
     columns,
     visibleColumns,
+    showColumnModal,
+    dropTargetColumnId,
     setPlacaOuRenavam,
     setCodigoMunicipio,
     setQuickSearch,
+    setShowColumnModal,
+    setDraggingColumnId,
+    setDropTargetColumnId,
     setColumnVisibility,
     handleBuscarVeiculo,
     handlePageChange,
     handleSortChange,
+    handleColumnDrop,
+    handleExportCsv,
   };
 }

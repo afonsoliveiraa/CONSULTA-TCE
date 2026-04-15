@@ -3,7 +3,6 @@ import { useContractQuery } from "../../hooks/useContractQuery";
 import { ContractColumnsModal } from "./components/ContractColumnsModal";
 import { ContractFiltersCard } from "./components/ContractFiltersCard";
 import { ContractResultsCard } from "./components/ContractResultsCard";
-import { ContractsTopbar } from "./components/ContractsTopbar";
 
 // Pagina da consulta de contratos orquestrando os componentes da feature.
 export const ContractQueryPage: FunctionalComponent = () => {
@@ -43,13 +42,20 @@ export const ContractQueryPage: FunctionalComponent = () => {
 
   return (
     <>
-      <ContractsTopbar currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} />
+      <div class="contracts-topbar">
+        <div class="contracts-breadcrumbs">
+          <span>Processos</span>
+          <span>&rsaquo;</span>
+          <strong>Contratos</strong>
+        </div>
+      </div>
+
       <ContractFiltersCard
         numeroContrato={numeroContrato}
         codigoMunicipio={codigoMunicipio}
         municipios={municipios}
         mensagemConsulta={mensagemConsulta}
-        erroConsulta={erroConsulta ?? ""}        
+        erroConsulta={erroConsulta ?? ""}
         carregandoConsulta={carregandoConsulta}
         onNumeroContratoChange={setNumeroContrato}
         onCodigoMunicipioChange={setCodigoMunicipio}

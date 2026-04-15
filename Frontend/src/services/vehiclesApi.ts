@@ -68,12 +68,14 @@ export async function buscarVeiculos(
   page = 1,
 ): Promise<VehiclePagedResult> {
   try {
-    const response = await api.get("/vehicles", {
+    const url = placaOuRenavam?.trim() 
+      ? `/vehicles/placa-renavam/${encodeURIComponent(placaOuRenavam.trim())}` 
+      : "/vehicles";
+
+    const response = await api.get(url, {
       params: {
-        placa_ou_renavam: placaOuRenavam?.trim() || undefined,
         cod_municipio: codMunicipio?.trim() || undefined,
-        // Mantendo o padrão que funciona no Contracts
-        "page[page]": page, 
+        "page[page]": page, // <--- ALTERE AQUI para ficar igual ao Contracts
       },
     });
 

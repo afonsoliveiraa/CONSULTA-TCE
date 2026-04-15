@@ -1,11 +1,11 @@
 import { type FunctionalComponent } from "preact";
 
-export const BiddingsTopbar: FunctionalComponent = () => (
+export const TceTopbar: FunctionalComponent = () => (
   <div class="contracts-topbar">
     <div class="contracts-breadcrumbs">
       <span>Processos</span>
       <span>&rsaquo;</span>
-      <strong>Licitacoes</strong>
+      <strong>API TCE</strong>
     </div>
   </div>
 );

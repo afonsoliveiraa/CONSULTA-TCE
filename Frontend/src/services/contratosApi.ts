@@ -98,23 +98,17 @@ export async function uploadVeiculos(arquivos: File | File[]): Promise<string> {
  * Busca contratos (Padrão Sênior Pagy v43)
  */
 export async function buscarContratos(
-  numeroContrato?: string | number,
+  numeroContrato?: string,
   codMunicipio?: string,
   page = 1
 ): Promise<ContratoPagedResult> {
-  
-  // Limpeza dos parâmetros
-  const numLimpo = String(numeroContrato || "").trim();
-  const municipioLimpo = codMunicipio?.trim();
-
-  // Agora a URL é sempre a base, pois o index resolve os filtros
-  const url = "/contracts";
+  const url = numeroContrato?.trim() 
+    ? `/contracts/numero/${encodeURIComponent(numeroContrato.trim())}` 
+    : "/contracts";
 
   const response = await api.get(url, {
     params: {
-      // Passa o número do contrato se ele existir, caso contrário undefined (o axios remove params undefined)
-      numero_contrato: numLimpo || undefined,
-      cod_municipio: municipioLimpo || undefined,
+      cod_municipio: codMunicipio?.trim() || undefined,
       "page[page]": page 
     },
   });
