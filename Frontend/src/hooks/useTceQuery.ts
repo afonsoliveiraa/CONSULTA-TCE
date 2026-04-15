@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { sortCollectionByField, type SortDirection } from "../lib/sort";
 import { formatColumnLabel } from "../pages/tce/tcePresentation";
 import { fetchTceEndpoints, fetchTceMunicipalities, queryTce } from "../services/tceApi";
@@ -12,6 +12,8 @@ import type {
 
 export function useTceQuery() {
   const pageSize = 25;
+  const refreshTimerRef = useRef<number | null>(null);
+  const lastQueryRef = useRef<{ path: string; params: Record<string, string> } | null>(null);
   const [municipalities, setMunicipalities] = useState<TceMunicipalityOption[]>([]);
   const [endpoints, setEndpoints] = useState<TceEndpoint[]>([]);
   const [selectedMunicipalityCode, setSelectedMunicipalityCode] = useState("");
@@ -52,6 +54,7 @@ export function useTceQuery() {
   const dynamicParameters = selectedEndpoint?.parameters ?? [];
 
   useEffect(() => {
+    clearPendingRefresh();
     setFormValues({});
     setSelectedMunicipalityCode("");
     setResult(null);
@@ -63,6 +66,13 @@ export function useTceQuery() {
     setCurrentPage(1);
   }, [selectedPath]);
 
+  useEffect(
+    () => () => {
+      clearPendingRefresh();
+    },
+    [],
+  );
+
   const visibleColumns = useMemo(() => columns.filter((column) => column.active !== false), [columns]);
 
   const filteredItems = useMemo(() => {
@@ -70,8 +80,8 @@ export function useTceQuery() {
     const normalizedSearch = quickSearch.trim().toLowerCase();
     const searchedItems = normalizedSearch
       ? baseItems.filter((item) =>
-          Object.values(item).some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch)),
-        )
+        Object.values(item).some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch)),
+      )
       : baseItems;
 
     if (!sortColumnId) {
@@ -118,11 +128,13 @@ export function useTceQuery() {
 
     try {
       const hiddenDefaultParams = buildHiddenDefaultParams(selectedEndpoint);
-      const response = await queryTce(selectedPath, {
+      const requestParams = {
         ...hiddenDefaultParams,
         ...formValues,
         ...(selectedMunicipalityCode ? { codigo_municipio: selectedMunicipalityCode } : {}),
-      });
+      };
+      const response = await queryTce(selectedPath, requestParams);
+      lastQueryRef.current = { path: selectedPath, params: requestParams };
 
       setResult(response);
 
@@ -132,11 +144,12 @@ export function useTceQuery() {
       setSortDirection("asc");
       const totalFromMetadata = Number(response.data?.length ?? response.metadata?.total ?? response.metadata?.length ?? 0);
       setMessageQuery(
-        totalFromMetadata > 0
-          ? `${totalFromMetadata} registros retornados pelo TCE-CE.`
-          : "Nenhum registro retornado pelo TCE-CE para os parametros informados.",
+        buildQueryMessage(response, totalFromMetadata),
       );
+
+      scheduleBackgroundRefresh(response);
     } catch (error: any) {
+      clearPendingRefresh();
       setResult(null);
       setColumns([]);
       setErrorQuery(error?.response?.data?.error || error?.message || "Erro ao consultar o TCE-CE.");
@@ -245,6 +258,48 @@ export function useTceQuery() {
     handleColumnDrop,
     handleExportCsv,
   };
+
+  function scheduleBackgroundRefresh(response: TceQueryResult) {
+    clearPendingRefresh();
+
+    if (response.metadata?.complete !== false || !lastQueryRef.current) {
+      return;
+    }
+
+    refreshTimerRef.current = window.setTimeout(async () => {
+      const latestQuery = lastQueryRef.current;
+      if (!latestQuery) {
+        return;
+      }
+
+      try {
+        const refreshedResponse = await queryTce(latestQuery.path, latestQuery.params);
+        setResult(refreshedResponse);
+
+        const nextColumns = buildColumnsFromItems(refreshedResponse.data || []);
+        setColumns(nextColumns);
+        setSortColumnId((current) => current || nextColumns[0]?.id || null);
+
+        const totalFromMetadata = Number(
+          refreshedResponse.data?.length ?? refreshedResponse.metadata?.total ?? refreshedResponse.metadata?.length ?? 0,
+        );
+        setMessageQuery(buildQueryMessage(refreshedResponse, totalFromMetadata));
+
+        if (refreshedResponse.metadata?.complete === false) {
+          scheduleBackgroundRefresh(refreshedResponse);
+        }
+      } catch {
+        scheduleBackgroundRefresh(response);
+      }
+    }, 1500);
+  }
+
+  function clearPendingRefresh() {
+    if (refreshTimerRef.current != null) {
+      window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }
 }
 
 function buildColumnsFromItems(items: Record<string, unknown>[]): TceColumnDefinition[] {
@@ -279,4 +334,16 @@ function buildHiddenDefaultParams(selectedEndpoint: TceEndpoint | null) {
 
 function requiresMunicipality(selectedEndpoint: TceEndpoint | null) {
   return selectedEndpoint?.required_parameters.some((parameter) => parameter.name === "codigo_municipio") ?? false;
+}
+
+function buildQueryMessage(response: TceQueryResult, totalFromMetadata: number) {
+  if (totalFromMetadata <= 0) {
+    return "Nenhum registro retornado pelo TCE-CE para os parametros informados.";
+  }
+
+  if (response.metadata?.complete === false) {
+    return `Carregando ${response.data.length} registros...`;
+  }
+
+  return `${totalFromMetadata} registros retornados pelo TCE-CE.`;
 }

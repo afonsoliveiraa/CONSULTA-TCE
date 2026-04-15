@@ -33,7 +33,9 @@ export interface TceQueryResult {
   endpoint: string;
   source_url: string;
   data: Record<string, unknown>[];
-  metadata: Record<string, unknown>;
+  metadata: Record<string, unknown> & {
+    complete?: boolean;
+  };
 }
 
 export interface TcePaginationState {

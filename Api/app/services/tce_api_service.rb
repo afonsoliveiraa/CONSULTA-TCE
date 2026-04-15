@@ -5,7 +5,9 @@ require 'set'
 class TceApiService
   BASE_URL = 'https://api-dados-abertos.tce.ce.gov.br'.freeze
   SPEC_PATH = Rails.root.join('lib', 'tce_specs.json')
-  CACHE_NAMESPACE = 'tce_v4'.freeze
+  CACHE_NAMESPACE = 'tce_v6'.freeze
+  PARALLEL_REQUEST_LIMIT = 4
+  BACKGROUND_WARMUP_TTL = 10.minutes
 
   def self.catalog
     new.catalog
@@ -61,9 +63,10 @@ class TceApiService
 
     sanitized_params = sanitize_params(raw_params)
     source_url = build_source_url(normalized_endpoint, sanitized_params)
-    cache_key = "#{CACHE_NAMESPACE}/#{normalized_endpoint}/#{sanitized_params.to_a.sort_by(&:first).to_h.to_query}"
 
-    Rails.cache.fetch(cache_key, expires_in: 24.hours) do
+    if paginated_query?(normalized_endpoint)
+      query_paginated_endpoint(normalized_endpoint, sanitized_params, source_url)
+    else
       execute_query(normalized_endpoint, sanitized_params, source_url)
     end
   end
@@ -80,62 +83,127 @@ class TceApiService
 
   private
 
-  def execute_query(endpoint, sanitized_params, source_url)
-    normalized_payload =
-      if paginated_query?(endpoint)
-        fetch_all_pages(endpoint, sanitized_params)
-      else
-        perform_request(endpoint, sanitized_params)
-      end
+  def query_paginated_endpoint(endpoint, sanitized_params, source_url)
+    if (cached_response = Rails.cache.read(full_cache_key(endpoint, sanitized_params)))
+      return cached_response
+    end
 
-    {
+    partial_response = fetch_first_page(endpoint, sanitized_params, source_url)
+    warm_full_result_async(endpoint, sanitized_params, source_url)
+    partial_response
+  end
+
+  def execute_query(endpoint, sanitized_params, source_url)
+    normalized_payload = perform_request(endpoint, sanitized_params)
+
+    build_result_payload(
       endpoint: endpoint,
       source_url: source_url,
       data: normalized_payload[:data],
-      metadata: normalized_payload[:metadata]
-    }
+      metadata: normalized_payload[:metadata].merge(complete: true)
+    )
   rescue Net::OpenTimeout, Net::ReadTimeout
     raise ExternalApiError.new('A API do TCE demorou demais para responder.', code: 504)
   rescue SocketError, Errno::EACCES, Errno::ECONNREFUSED, OpenSSL::SSL::SSLError => e
     raise ExternalApiError.new('Falha na conexao com a API do TCE.', code: 502, details: e.message)
   end
 
-  def fetch_all_pages(endpoint, sanitized_params)
+  def fetch_first_page(endpoint, sanitized_params, source_url)
     chunk_size = extract_chunk_size(sanitized_params)
-    offset = 0
-    total = nil
-    items = []
-
-    loop do
-      page_payload = perform_request(
-        endpoint,
-        sanitized_params.merge(
-          'quantidade' => chunk_size.to_s,
-          'deslocamento' => offset.to_s
-        )
+    first_page = perform_request(
+      endpoint,
+      sanitized_params.merge(
+        'quantidade' => chunk_size.to_s,
+        'deslocamento' => '0'
       )
+    )
 
-      page_items = page_payload[:data]
-      page_length = page_items.length
-      page_total = page_payload.dig(:metadata, :total).to_i
+    total = first_page.dig(:metadata, :total).to_i
+    total = first_page[:data].length if total <= 0
 
-      total = page_total if page_total.positive?
-      items.concat(page_items)
+    build_result_payload(
+      endpoint: endpoint,
+      source_url: source_url,
+      data: first_page[:data],
+      metadata: {
+        total: total,
+        length: first_page[:data].length,
+        complete: false
+      }
+    )
+  end
 
-      break if page_length.zero?
-      break if total && items.length >= total
-      break if page_length < chunk_size
+  def warm_full_result_async(endpoint, sanitized_params, source_url)
+    warmup_key = warmup_cache_key(endpoint, sanitized_params)
+    return if Rails.cache.exist?(warmup_key)
 
-      offset += page_length
+    Rails.cache.write(warmup_key, true, expires_in: BACKGROUND_WARMUP_TTL)
+
+    Thread.new do
+      Rails.application.executor.wrap do
+        begin
+          full_response = fetch_all_pages(endpoint, sanitized_params, source_url)
+          Rails.cache.write(full_cache_key(endpoint, sanitized_params), full_response, expires_in: 24.hours)
+        ensure
+          Rails.cache.delete(warmup_key)
+        end
+      end
     end
+  end
 
-    {
+  def fetch_all_pages(endpoint, sanitized_params, source_url)
+    chunk_size = extract_chunk_size(sanitized_params)
+    first_page = perform_request(
+      endpoint,
+      sanitized_params.merge(
+        'quantidade' => chunk_size.to_s,
+        'deslocamento' => '0'
+      )
+    )
+
+    first_page_items = first_page[:data]
+    total = first_page.dig(:metadata, :total).to_i
+    total = first_page_items.length if total <= 0
+
+    remaining_offsets = build_remaining_offsets(total, chunk_size)
+    remaining_pages = fetch_pages_in_parallel(endpoint, sanitized_params, chunk_size, remaining_offsets)
+    items = first_page_items + remaining_pages.flat_map { |page| page[:data] }
+
+    build_result_payload(
+      endpoint: endpoint,
+      source_url: source_url,
       data: items,
       metadata: {
-        total: total || items.length,
-        length: items.length
+        total: total,
+        length: items.length,
+        complete: true
       }
-    }
+    )
+  end
+
+  def fetch_pages_in_parallel(endpoint, sanitized_params, chunk_size, offsets)
+    return [] if offsets.empty?
+
+    offsets.each_slice(PARALLEL_REQUEST_LIMIT).flat_map do |offset_batch|
+      threads = offset_batch.map do |offset|
+        Thread.new do
+          Rails.application.executor.wrap do
+            [
+              offset,
+              perform_request(
+                endpoint,
+                sanitized_params.merge(
+                  'quantidade' => chunk_size.to_s,
+                  'deslocamento' => offset.to_s
+                )
+              )
+            ]
+          end
+        end
+      end
+
+      threads.map(&:value).sort_by(&:first).map(&:last)
+    end
   end
 
   def perform_request(endpoint, params)
@@ -282,6 +350,41 @@ class TceApiService
     return quantity if quantity.positive?
 
     100
+  end
+
+  def build_remaining_offsets(total, chunk_size)
+    return [] if total <= chunk_size
+
+    offsets = []
+    offset = chunk_size
+
+    while offset < total
+      offsets << offset
+      offset += chunk_size
+    end
+
+    offsets
+  end
+
+  def build_result_payload(endpoint:, source_url:, data:, metadata:)
+    {
+      endpoint: endpoint,
+      source_url: source_url,
+      data: data,
+      metadata: metadata
+    }
+  end
+
+  def cache_query_string(params)
+    params.to_a.sort_by(&:first).to_h.to_query
+  end
+
+  def full_cache_key(endpoint, params)
+    "#{CACHE_NAMESPACE}/full/#{endpoint}/#{cache_query_string(params)}"
+  end
+
+  def warmup_cache_key(endpoint, params)
+    "#{CACHE_NAMESPACE}/warmup/#{endpoint}/#{cache_query_string(params)}"
   end
 
   def build_source_url(endpoint, params)
