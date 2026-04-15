@@ -4,11 +4,18 @@ class VehiclesController < ApplicationController
   # GET /vehicles
   def index
     scope = Vehicle.all
-    
+
+    if params[:placa_ou_renavam].present?
+      term = "%#{params[:placa_ou_renavam]}%"
+      # Busca por placa OU renavam usando LIKE
+      scope = scope.where("placa LIKE :t OR codigo_renavam LIKE :t", t: term)
+    end
+
     if params[:cod_municipio].present?
       scope = scope.where(cod_municipio: params[:cod_municipio])
     end
-    
+
+    # O Pagy costuma usar params[:page] por padrão
     @pagy, @vehicles = pagy(scope)
     render_paginated(@pagy, @vehicles)
   end

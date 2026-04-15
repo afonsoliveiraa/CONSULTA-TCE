@@ -4,6 +4,9 @@ class BiddingsController < ApplicationController
   # GET /biddings
   def index
     scope = Bidding.all
+
+    scope = scope.where("numero_processo LIKE ?", "%#{params[:numero_processo]}%") if params[:numero_processo].present?
+    
     # Filtra por município se o parâmetro estiver presente
     scope = scope.where(cod_municipio: params[:cod_municipio]) if params[:cod_municipio].present?
 
@@ -26,23 +29,6 @@ class BiddingsController < ApplicationController
       render json: { message: "#{bidding} licitações importadas com sucesso." }, status: :created
     else
       render json: { message: "Nenhuma licitação importada." }, status: :unprocessable_entity
-    end
-  end
-
-  # GET /biddings/processo/:numero_processo
-  def show_by_numero_processo
-    scope = Bidding.where(numero_processo: params[:numero_processo])
-    
-    # Filtro adicional por município se presente
-    if params[:cod_municipio].present?
-      scope = scope.where(cod_municipio: params[:cod_municipio])
-    end
-
-    if scope.any?
-      @pagy, @biddings = pagy(scope)
-      render_paginated(@pagy, @biddings)
-    else
-      render json: { error: "Nenhuma licitação encontrada" }, status: :not_found
     end
   end
 
