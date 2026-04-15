@@ -1,195 +1,150 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { sortCollectionByField, type SortDirection } from "../lib/sort";
+import { formatColumnLabel } from "../pages/tce/tcePresentation";
 import { fetchTceEndpoints, fetchTceMunicipalities, queryTce } from "../services/tceApi";
 import type {
   TceColumnDefinition,
   TceEndpoint,
-  TceEndpointField,
   TceMunicipalityOption,
   TceQueryResult,
 } from "../types/tce";
-import { formatColumnLabel, formatTceValue } from "../pages/tce/tcePresentation";
 
-// Encapsula todo o comportamento da pagina "API TCE".
 export function useTceQuery() {
-  const [endpoints, setEndpoints] = useState<TceEndpoint[]>([]);
   const [municipalities, setMunicipalities] = useState<TceMunicipalityOption[]>([]);
-  const [selectedEndpointKey, setSelectedEndpointKey] = useState("contrato");
+  const [endpoints, setEndpoints] = useState<TceEndpoint[]>([]);
   const [selectedMunicipalityCode, setSelectedMunicipalityCode] = useState("");
+  const [selectedPath, setSelectedPath] = useState("");
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [result, setResult] = useState<TceQueryResult | null>(null);
-  const [quickSearch, setQuickSearch] = useState("");
-  const [sortColumnId, setSortColumnId] = useState("");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [loadingQuery, setLoadingQuery] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [showColumnModal, setShowColumnModal] = useState(false);
+  const [errorQuery, setErrorQuery] = useState("");
+  const [messageQuery, setMessageQuery] = useState("");
+  const [quickSearch, setQuickSearch] = useState("");
   const [columns, setColumns] = useState<TceColumnDefinition[]>([]);
+  const [showColumnModal, setShowColumnModal] = useState(false);
   const [draggingColumnId, setDraggingColumnId] = useState<string | null>(null);
   const [dropTargetColumnId, setDropTargetColumnId] = useState<string | null>(null);
+  const [sortColumnId, setSortColumnId] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   useEffect(() => {
-    let active = true;
+    fetchTceMunicipalities()
+      .then(setMunicipalities)
+      .catch(() => setMunicipalities([]));
 
-    async function loadInitialData() {
-      setLoadingCatalog(true);
-      setErrorMessage("");
-
-      try {
-        const [loadedEndpoints, loadedMunicipalities] = await Promise.all([
-          fetchTceEndpoints(),
-          fetchTceMunicipalities(),
-        ]);
-
-        if (!active) {
-          return;
-        }
-
-        setEndpoints(loadedEndpoints);
-        setMunicipalities(loadedMunicipalities);
-
-        if (!loadedEndpoints.some((endpoint) => endpoint.key === "contrato") && loadedEndpoints[0]) {
-          setSelectedEndpointKey(loadedEndpoints[0].key);
-        }
-      } catch (error) {
-        if (!active) {
-          return;
-        }
-
-        setErrorMessage(
-          error instanceof Error ? error.message : "Nao foi possivel carregar o catalogo da API TCE.",
-        );
-      } finally {
-        if (active) {
-          setLoadingCatalog(false);
-        }
-      }
-    }
-
-    void loadInitialData();
-
-    return () => {
-      active = false;
-    };
+    fetchTceEndpoints()
+      .then((catalog) => {
+        setEndpoints(catalog);
+        setSelectedPath((current) => current || catalog[0]?.path || "");
+      })
+      .catch(() => setEndpoints([]));
   }, []);
 
-  const activeEndpoint = useMemo(
-    () => endpoints.find((endpoint) => endpoint.key === selectedEndpointKey) ?? null,
-    [endpoints, selectedEndpointKey],
+  const selectedEndpoint = useMemo(
+    () => endpoints.find((endpoint) => endpoint.path === selectedPath) ?? null,
+    [endpoints, selectedPath],
   );
 
-  const selectedMunicipality = useMemo(
-    () => municipalities.find((municipality) => municipality.code === selectedMunicipalityCode) ?? null,
-    [municipalities, selectedMunicipalityCode],
-  );
-
-  const requiredFields = useMemo<TceEndpointField[]>(
-    () => activeEndpoint?.requiredFields ?? [],
-    [activeEndpoint],
-  );
-
-  const optionalFields = useMemo<TceEndpointField[]>(
-    () => activeEndpoint?.optionalFields ?? [],
-    [activeEndpoint],
-  );
-
-  const visibleColumns = useMemo(
-    () => columns.filter((column) => column.active !== false),
-    [columns],
-  );
-
-  const filteredItems = useMemo(() => {
-    if (!result) {
-      return [];
-    }
-
-    const normalizedQuickSearch = quickSearch.trim().toLowerCase();
-    const normalizedItems = !normalizedQuickSearch
-      ? result.items
-      : result.items.filter((item) =>
-          result.columns.some((column) =>
-            formatTceValue(column, item[column]).toLowerCase().includes(normalizedQuickSearch),
-          ),
-        );
-
-    if (!sortColumnId) {
-      return normalizedItems;
-    }
-
-    return sortCollectionByField(normalizedItems, sortColumnId, sortDirection);
-  }, [quickSearch, result, sortColumnId, sortDirection]);
+  const endpointSummary = selectedEndpoint?.summary ?? "";
+  const dynamicParameters = selectedEndpoint?.parameters ?? [];
 
   useEffect(() => {
-    if (!result) {
+    setFormValues({});
+    setSelectedMunicipalityCode("");
+    setResult(null);
+    setColumns([]);
+    setQuickSearch("");
+    setErrorQuery("");
+    setMessageQuery("");
+    setSortColumnId(null);
+  }, [selectedPath]);
+
+  const visibleColumns = useMemo(() => columns.filter((column) => column.active !== false), [columns]);
+
+  const filteredItems = useMemo(() => {
+    const baseItems = result?.data || [];
+    const normalizedSearch = quickSearch.trim().toLowerCase();
+    const searchedItems = normalizedSearch
+      ? baseItems.filter((item) =>
+          Object.values(item).some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch)),
+        )
+      : baseItems;
+
+    if (!sortColumnId) {
+      return searchedItems;
+    }
+
+    return sortCollectionByField(searchedItems, sortColumnId, sortDirection);
+  }, [quickSearch, result, sortColumnId, sortDirection]);
+
+  const handleSubmit = async (event: Event) => {
+    event.preventDefault();
+    setErrorQuery("");
+    setMessageQuery("");
+
+    if (requiresMunicipality(selectedEndpoint) && !selectedMunicipalityCode) {
+      setResult(null);
       setColumns([]);
+      setErrorQuery("Selecione um municipio para consultar este servico do TCE-CE.");
       return;
     }
 
-    setColumns((current) => {
-      if (current.length === 0) {
-        setSortColumnId(result.columns[0] ?? "");
-        setSortDirection("asc");
-        return result.columns.map((column) => ({
-          id: column,
-          label: formatColumnLabel(column),
-          active: true,
-        }));
-      }
+    setLoadingQuery(true);
 
-      const currentMap = new Map(current.map((column) => [column.id, column]));
-      const nextColumns = result.columns.map((column) => {
-        const existingColumn = currentMap.get(column);
-        return {
-          id: column,
-          label: formatColumnLabel(column),
-          active: existingColumn?.active ?? true,
-        };
+    try {
+      const hiddenDefaultParams = buildHiddenDefaultParams(selectedEndpoint);
+      const response = await queryTce(selectedPath, {
+        ...hiddenDefaultParams,
+        ...formValues,
+        ...(selectedMunicipalityCode ? { codigo_municipio: selectedMunicipalityCode } : {}),
       });
 
-      const orderedExistingColumns = current
-        .map((column) => nextColumns.find((candidate) => candidate.id === column.id))
-        .filter((column): column is TceColumnDefinition => column !== undefined);
+      setResult(response);
 
-      const newColumns = nextColumns.filter(
-        (column) => !orderedExistingColumns.some((existingColumn) => existingColumn.id === column.id),
+      const nextColumns = buildColumnsFromItems(response.data || []);
+      setColumns(nextColumns);
+      setSortColumnId(nextColumns[0]?.id ?? null);
+      setSortDirection("asc");
+      const totalFromMetadata = Number(response.metadata?.total ?? response.metadata?.length ?? response.data?.length ?? 0);
+      setMessageQuery(
+        totalFromMetadata > 0
+          ? `${totalFromMetadata} registros retornados pelo TCE-CE.`
+          : "Nenhum registro retornado pelo TCE-CE para os parametros informados.",
       );
+    } catch (error: any) {
+      setResult(null);
+      setColumns([]);
+      setErrorQuery(error?.response?.data?.error || error?.message || "Erro ao consultar o TCE-CE.");
+      setMessageQuery("");
+    } finally {
+      setLoadingQuery(false);
+    }
+  };
 
-      return [...orderedExistingColumns, ...newColumns];
-    });
-  }, [result]);
+  const handleSortChange = (columnId: string) => {
+    if (sortColumnId === columnId) {
+      setSortDirection((currentDirection) => (currentDirection === "asc" ? "desc" : "asc"));
+      return;
+    }
 
-  const setFieldValue = (fieldName: string, fieldValue: string) => {
-    setFormValues((current) => ({
-      ...current,
-      [fieldName]: fieldValue,
-    }));
+    setSortColumnId(columnId);
+    setSortDirection("asc");
   };
 
   const setColumnVisibility = (columnId: string, checked: boolean) => {
     setColumns((current) =>
-      current.map((column) =>
-        column.id === columnId
-          ? {
-              ...column,
-              active: checked,
-            }
-          : column,
-      ),
+      current.map((column) => (column.id === columnId ? { ...column, active: checked } : column)),
     );
   };
 
-  const handleColumnDrop = (targetId: string) => {
-    if (!draggingColumnId || draggingColumnId === targetId) {
-      setDraggingColumnId(null);
-      setDropTargetColumnId(null);
+  const handleColumnDrop = (targetColumnId: string) => {
+    if (!draggingColumnId || draggingColumnId === targetColumnId) {
       return;
     }
 
     setColumns((current) => {
       const sourceIndex = current.findIndex((column) => column.id === draggingColumnId);
-      const targetIndex = current.findIndex((column) => column.id === targetId);
+      const targetIndex = current.findIndex((column) => column.id === targetColumnId);
 
       if (sourceIndex < 0 || targetIndex < 0) {
         return current;
@@ -205,175 +160,96 @@ export function useTceQuery() {
     setDropTargetColumnId(null);
   };
 
-  const handleEndpointChange = (endpointKey: string) => {
-    setSelectedEndpointKey(endpointKey);
-    setFormValues({});
-    setResult(null);
-    setColumns([]);
-    setSortColumnId("");
-    setSortDirection("asc");
-    setSuccessMessage("");
-    setErrorMessage("");
-    setQuickSearch("");
-  };
-
-  const handleSortChange = (columnId: string) => {
-    if (sortColumnId === columnId) {
-      setSortDirection((currentDirection) => (currentDirection === "asc" ? "desc" : "asc"));
-      return;
-    }
-
-    setSortColumnId(columnId);
-    setSortDirection("asc");
-  };
-
-  const buildQueryParameters = () => {
-    const normalizedParameters = { ...formValues };
-    const dateFields = [...requiredFields, ...optionalFields];
-
-    for (const field of dateFields) {
-      if (field.type !== "date") {
-        continue;
-      }
-
-      const startKey = `${field.name}_inicio`;
-      const endKey = `${field.name}_fim`;
-      const startDate = normalizedParameters[startKey]?.trim() ?? "";
-      const endDate = normalizedParameters[endKey]?.trim() ?? "";
-
-      delete normalizedParameters[startKey];
-      delete normalizedParameters[endKey];
-
-      if (startDate && endDate) {
-        normalizedParameters[field.name] = `${startDate}_${endDate}`;
-      } else if (startDate) {
-        normalizedParameters[field.name] = startDate;
-      } else if (endDate) {
-        normalizedParameters[field.name] = endDate;
-      }
-    }
-
-    return normalizedParameters;
-  };
-
-  const executeQuery = async (page: number) => {
-    if (!activeEndpoint) {
-      setErrorMessage("Selecione um assunto para consultar.");
-      return;
-    }
-
-    if (!selectedMunicipality) {
-      setErrorMessage("Selecione um municipio para realizar a consulta.");
-      return;
-    }
-
-    setLoadingQuery(true);
-    setErrorMessage("");
-    setSuccessMessage("");
-
-    try {
-      const queryResult = await queryTce({
-        municipalityCode: selectedMunicipality.code,
-        municipalityName: selectedMunicipality.name,
-        endpointKey: activeEndpoint.key,
-        parameters: buildQueryParameters(),
-        page,
-        pageSize: 20,
-      });
-
-      setResult(queryResult);
-      setSuccessMessage(
-        queryResult.pagination.totalItems === 1
-          ? "1 registro carregado para a grade."
-          : `${queryResult.pagination.totalItems} registros mapeados para a consulta.`,
-      );
-    } catch (error) {
-      setResult(null);
-      setColumns([]);
-      setErrorMessage(error instanceof Error ? error.message : "Falha ao consultar a API TCE.");
-    } finally {
-      setLoadingQuery(false);
-    }
-  };
-
-  const handleSubmit = async (event: Event) => {
-    event.preventDefault();
-    await executeQuery(1);
-  };
-
-  const handlePageChange = async (nextPage: number) => {
-    if (!result) {
-      return;
-    }
-
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    await executeQuery(nextPage);
-  };
-
   const handleExportCsv = () => {
-    if (!result || filteredItems.length === 0) {
+    if (!filteredItems.length || !visibleColumns.length) {
       return;
     }
 
-    const csvHeader = visibleColumns.map((column) => column.label).join(";");
+    const columnIds = visibleColumns.map((column) => column.id);
+    const csvHeader = columnIds.map(escapeCsvValue).join(";");
     const csvRows = filteredItems.map((item) =>
-      visibleColumns
-        .map((column) => `"${formatTceValue(column.id, item[column.id]).replaceAll("\"", "\"\"")}"`)
-        .join(";"),
+      columnIds.map((columnId) => escapeCsvValue(item[columnId] == null ? "" : String(item[columnId]))).join(";"),
     );
 
-    const blob = new Blob([[csvHeader, ...csvRows].join("\n")], {
-      type: "text/csv;charset=utf-8;",
-    });
-
+    const blob = new Blob([[csvHeader, ...csvRows].join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `api-tce-${selectedEndpointKey || "consulta"}.csv`;
-    document.body.appendChild(link);
+    link.download = `${selectedPath.replaceAll("/", "_").replace(/^_/, "") || "tce"}_${Date.now()}.csv`;
     link.click();
-    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
   return {
-    endpoints,
     municipalities,
-    activeEndpoint,
-    selectedMunicipality,
-    selectedEndpointKey,
+    endpoints,
+    selectedPath,
+    setSelectedPath,
     selectedMunicipalityCode,
-    requiredFields,
-    optionalFields,
+    setSelectedMunicipalityCode,
+    endpointSummary,
+    dynamicParameters,
     formValues,
-    result,
-    filteredItems,
-    quickSearch,
-    loadingCatalog,
     loadingQuery,
-    errorMessage,
-    successMessage,
-    showColumnModal,
+    errorQuery,
+    messageQuery,
+    result,
+    quickSearch,
     columns,
+    visibleColumns,
+    filteredItems,
+    showColumnModal,
+    dropTargetColumnId,
     sortColumnId,
     sortDirection,
-    visibleColumns,
-    dropTargetColumnId,
-    setSelectedMunicipalityCode,
+    selectedEndpoint,
+    setFieldValue: (name: string, value: string) => setFormValues((current) => ({ ...current, [name]: value })),
     setQuickSearch,
-    setFieldValue,
     setShowColumnModal,
     setDraggingColumnId,
     setDropTargetColumnId,
     setColumnVisibility,
-    handleEndpointChange,
+    handleSubmit,
     handleSortChange,
     handleColumnDrop,
-    handleSubmit,
-    handlePageChange,
     handleExportCsv,
   };
+}
+
+function buildColumnsFromItems(items: Record<string, unknown>[]): TceColumnDefinition[] {
+  const columnIds = Array.from(
+    items.reduce((columnSet, item) => {
+      Object.keys(item).forEach((key) => columnSet.add(key));
+      return columnSet;
+    }, new Set<string>()),
+  );
+
+  return columnIds.map((columnId) => ({
+    id: columnId,
+    label: formatColumnLabel(columnId),
+    active: true,
+  }));
+}
+
+function escapeCsvValue(value: string) {
+  return `"${value.replaceAll('"', '""')}"`;
+}
+
+function buildHiddenDefaultParams(selectedEndpoint: TceEndpoint | null) {
+  const parameterNames = new Set(selectedEndpoint?.parameters.map((parameter) => parameter.name) ?? []);
+  const defaults: Record<string, string> = {};
+
+  if (parameterNames.has("quantidade")) {
+    defaults.quantidade = "100";
+  }
+
+  if (parameterNames.has("deslocamento")) {
+    defaults.deslocamento = "0";
+  }
+
+  return defaults;
+}
+
+function requiresMunicipality(selectedEndpoint: TceEndpoint | null) {
+  return selectedEndpoint?.required_parameters.some((parameter) => parameter.name === "codigo_municipio") ?? false;
 }

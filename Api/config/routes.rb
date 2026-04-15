@@ -1,23 +1,38 @@
 Rails.application.routes.draw do
-  namespace :catalog do
-    get "tce/endpoints", to: "tce#endpoints"
-    get "tce/municipios", to: "tce#municipios"
-    get "tce/imported_municipios", to: "tce#imported_municipios"
-  end
-
-  post "tce/query", to: "tce_queries#create"
-
-  resources :biddings do
+  resources :vehicles do
     collection do
-      # Isso gera: GET /biddings/numero/:numero_processo
-      get "numero/:numero_processo", action: :show_by_numero_processo
+      get 'municipios-importados', action: :show_municipios_importados
+      get 'placa-renavam/:numero', action: :show_by_placa_renavam
     end
   end
-  resources :vehicles
+
+  # No routes.rb
+  resources :analyses, only: [] do
+    collection do
+      post :analyses_ne # Isso cria a rota POST /analyses/analyses_ne
+    end
+  end
+
+  # Api TCE dinamica
+  get 'tce/endpoints', to: 'tce_api#endpoints'
+  # Rota para pegar os parâmetros e documentação
+  get 'tce/definitions/*endpoint', to: 'tce_api#definitions'
+  # Rota para buscar os dados reais
+  get 'tce/*endpoint', to: 'tce_api#fetch'
+
+  resources :biddings do  
+    collection do
+      # Isso gera: GET /biddings/numero/:numero_processo
+      get 'numero/:numero_processo', action: :show_by_numero_processo
+      get 'municipios-importados', action: :show_municipios_importados
+    end
+  end
+
   resources :contracts do
     collection do
       # Isso gera: GET /contracts/numero/:numero_contrato
       get 'numero/:numero_contrato', action: :show_by_numero_contrato
+      get 'municipios-importados', action: :show_municipios_importados
     end
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_12_200000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_13_143206) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -52,8 +52,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_12_200000) do
     t.string "id_ata_pncp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "municipality_id"
-    t.index ["municipality_id"], name: "index_biddings_on_municipality_id"
   end
 
   create_table "contracts", force: :cascade do |t|
@@ -83,16 +81,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_12_200000) do
     t.string "id_contrato_pncp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "municipality_id"
-    t.index ["municipality_id"], name: "index_contracts_on_municipality_id"
-  end
-
-  create_table "municipalities", force: :cascade do |t|
-    t.string "code", null: false
-    t.string "name"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["code"], name: "index_municipalities_on_code", unique: true
   end
 
   create_table "vehicles", force: :cascade do |t|
@@ -120,14 +108,5 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_12_200000) do
     t.date "data_referencia_documentacao"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "municipality_id"
-    t.index ["codigo_renavam"], name: "index_vehicles_on_codigo_renavam"
-    t.index ["data_referencia_documentacao"], name: "index_vehicles_on_data_referencia_documentacao"
-    t.index ["municipality_id"], name: "index_vehicles_on_municipality_id"
-    t.index ["placa"], name: "index_vehicles_on_placa"
   end
-
-  add_foreign_key "biddings", "municipalities"
-  add_foreign_key "contracts", "municipalities"
-  add_foreign_key "vehicles", "municipalities"
 end

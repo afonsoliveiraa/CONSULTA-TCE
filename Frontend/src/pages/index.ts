@@ -5,3 +5,4 @@ export { NotFoundPage } from "./NotFoundPage";
 export { TceApiPage } from "./tce/TceApiPage";
 export { UploadHistoryPage } from "./UploadHistoryPage";
 export { VehicleQueryPage } from "./vehicles/VehicleQueryPage";
+export { AnalysisNEPage } from "./AnalysisPage";

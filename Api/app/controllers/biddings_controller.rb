@@ -1,12 +1,15 @@
 class BiddingsController < ApplicationController
-  before_action :set_bidding, only: %i[show]
+  before_action :set_bidding, only: %i[ show ]
 
   # GET /biddings
   def index
-    scope = Bidding.includes(:municipality)
-    scope = scope.for_municipality_code(bidding_params[:codigo_municipio] || bidding_params[:cod_municipio])
+    scope = Bidding.all
+    # Filtra por município se o parâmetro estiver presente
+    scope = scope.where(cod_municipio: params[:cod_municipio]) if params[:cod_municipio].present?
 
-    @pagy, @biddings = pagy(:offset, scope)
+    # Usa a gem pagy para paginar os resultados
+    @pagy, @biddings = pagy(scope)
+    # utiliza a função do ApplicationController para renderizar a resposta paginada
     render_paginated(@pagy, @biddings)
   end
 
@@ -17,37 +20,46 @@ class BiddingsController < ApplicationController
 
   # POST /biddings
   def create
-    result = BiddingService.import_multiple_files(Array(bidding_params[:files]))
+    bidding = BiddingService.import_multiple_files(Array(bidding_params[:files]))
 
-    if result.count.positive?
-      render json: { message: result.message }, status: :created
-    elsif result.duplicate
-      render json: { message: result.message }, status: :unprocessable_entity
+    if bidding > 0
+      render json: { message: "#{bidding} licitações importadas com sucesso." }, status: :created
     else
-      render json: { message: result.message }, status: :unprocessable_entity
+      render json: { message: "Nenhuma licitação importada." }, status: :unprocessable_entity
     end
   end
 
+  # GET /biddings/processo/:numero_processo
   def show_by_numero_processo
-    scope = Bidding.includes(:municipality).where(numero_processo: params[:numero_processo])
-    scope = scope.for_municipality_code(bidding_params[:codigo_municipio] || bidding_params[:cod_municipio])
+    scope = Bidding.where(numero_processo: params[:numero_processo])
+    
+    # Filtro adicional por município se presente
+    if params[:cod_municipio].present?
+      scope = scope.where(cod_municipio: params[:cod_municipio])
+    end
 
     if scope.any?
-      @pagy, @biddings = pagy(:offset, scope)
+      @pagy, @biddings = pagy(scope)
       render_paginated(@pagy, @biddings)
     else
-      render json: { error: "Nenhuma licitacao encontrada para este numero de processo" }, status: :not_found
+      render json: { error: "Nenhuma licitação encontrada" }, status: :not_found
     end
+  end
+
+  # GET /biddings/municipios-importados
+  def show_municipios_importados
+    @municipios = Bidding.distinct.order(:cod_municipio).pluck(:cod_municipio)
+    render json: { municipios: @municipios }
   end
 
   private
+    # Use callbacks to share common setup or constraints between actions.
+    def set_bidding
+      @bidding = Bidding.find(params.expect(:id))
+    end
 
-  def set_bidding
-    @bidding = Bidding.find(params.expect(:id))
-  end
-
-  def bidding_params
-    # Aceita os dois nomes de parametro para manter compatibilidade com chamadas antigas.
-    params.permit(:cod_municipio, :codigo_municipio, :numero_processo, :file, files: [])
-  end
-end
+    # Only allow a list of trusted parameters through.
+    def bidding_params
+      params.permit( :cod_municipio, :numero_processo, :file, files: [] )
+    end
+end 

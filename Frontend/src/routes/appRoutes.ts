@@ -1,4 +1,4 @@
-export type AppRouteKey = "home" | "upload" | "consulta" | "consulta-licitacao" | "consulta-veiculo" | "tce-api" | "not-found";
+export type AppRouteKey = "home" | "upload" | "consulta" | "consulta-licitacao" | "consulta-veiculo" | "tce-api" | "analyses-ne" | "not-found";
 
 export interface AppRoute {
   key: AppRouteKey;
@@ -46,6 +46,13 @@ export function resolveAppRoute(pathname: string): AppRoute {
     return {
       key: "tce-api",
       title: "API TCE",
+    };
+  }
+
+  if (pathname === "/analyses-ne") {
+    return {
+      key: "analyses-ne",
+      title: "Análises de Erro",
     };
   }
 

@@ -33,3 +33,9 @@ export async function buscarLicitacoes(
 
   return response.data;
 }
+
+// services/biddingsApi.ts
+export async function getMunicipiosLicitacoes(): Promise<string[]> {
+  const response = await api.get("/biddings/municipios-importados");
+  return response.data?.municipios ?? [];
+}

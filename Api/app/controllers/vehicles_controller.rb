@@ -1,45 +1,64 @@
 class VehiclesController < ApplicationController
-  before_action :set_vehicle, only: %i[show]
+  before_action :set_vehicle, only: %i[ show ]
 
   # GET /vehicles
   def index
-    scope = Vehicle.includes(:municipality)
-    scope = scope.for_municipality_code(vehicle_params[:cod_municipio])
-
-    if vehicle_params[:placa_ou_renavam].present?
-      normalized_query = vehicle_params[:placa_ou_renavam].to_s.strip
-      scope = scope.where("placa = :query OR codigo_renavam = :query", query: normalized_query)
+    scope = Vehicle.all
+    
+    if params[:cod_municipio].present?
+      scope = scope.where(cod_municipio: params[:cod_municipio])
     end
-
-    @pagy, @vehicles = pagy(:offset, scope)
+    
+    @pagy, @vehicles = pagy(scope)
     render_paginated(@pagy, @vehicles)
   end
 
-  # GET /vehicles/:id
+  # GET /vehicles/1
   def show
     render json: @vehicle
   end
 
   # POST /vehicles
   def create
-    result = VehicleService.import_multiple_files(Array(vehicle_params[:files]))
+    files_count = VehicleService.import_multiple_files(Array(vehicle_params[:files]))
 
-    if result.count.positive?
-      render json: { message: result.message }, status: :created
-    elsif result.duplicate
-      render json: { message: result.message }, status: :unprocessable_entity
+    if files_count > 0
+      render json: { message: "#{files_count} contratos importados com sucesso." }, status: :created
     else
-      render json: { message: result.message }, status: :unprocessable_entity
+      render json: { message: "Nenhum contrato importado." }, status: :unprocessable_entity
     end
   end
 
+  def show_by_placa_renavam
+    # Querry dinâmica para buscar por placa ou renavam, usando o mesmo parâmetro "numero" da rota
+    scope = Vehicle.where("placa = :n OR codigo_renavam = :n", n: params[:numero])
+    
+    if params[:cod_municipio].present?
+      scope = scope.where(cod_municipio: params[:cod_municipio])
+    end
+
+    if scope.exists?
+      @pagy, @vehicles = pagy(scope.order(created_at: :desc))
+      render_paginated(@pagy, @vehicles)
+    else
+      render json: { error: "Nenhum veículo encontrado" }, status: :not_found
+    end
+  end
+
+  def show_municipios_importados
+    @municipios = Vehicle.distinct.order(:cod_municipio).pluck(:cod_municipio)
+    render json: { municipios: @municipios }
+  end
+
+
   private
+    # Use callbacks to share common setup or constraints between actions.
+    def set_vehicle
+      @vehicle = Vehicle.find(params.expect(:id))
+    end
 
-  def set_vehicle
-    @vehicle = Vehicle.find(params[:id])
-  end
-
-  def vehicle_params
-    params.permit(:cod_municipio, :placa_ou_renavam, :files, files: [])
-  end
+    # Only allow a list of trusted parameters through.
+    def vehicle_params
+      params.permit(:cod_municipio, :placa_ou_renavam, :files, files: [])
+    end
 end

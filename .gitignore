@@ -1,6 +1,8 @@
 .idea/
 ConsultaTCE/wwwroot/
 Frontend/node_modules/
+Frontend/.env
+**/.env
 Frontend/vite.stdout.log
 Frontend/vite.stderr.log
 Api/.bundle-user/

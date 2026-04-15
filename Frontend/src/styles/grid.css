@@ -1,5 +1,9 @@
-/* Estilos reutilizaveis da grade, toolbar e modal de colunas. */
+/* ==========================================================================
+   Estilos Reutilizáveis: Grade, Toolbar, Modal e Cards de Filtro
+   ========================================================================== */
 
+/* 1. TOOLBAR & BUSCA
+   ========================================================================== */
 .grid-demo__toolbar {
   display: flex;
   align-items: center;
@@ -58,6 +62,8 @@
   height: 18px;
 }
 
+/* 2. BOTÕES DA TOOLBAR
+   ========================================================================== */
 .grid-demo__toolbar-buttons {
   display: flex;
   gap: 14px;
@@ -98,12 +104,8 @@
   fill: currentColor;
 }
 
-.grid-demo__toolbar-icon svg {
-  display: block;
-  width: 18px;
-  height: 18px;
-}
-
+/* 3. TABELA & ORDENAÇÃO
+   ========================================================================== */
 .grid-demo__table {
   width: 100%;
   border-collapse: collapse;
@@ -142,18 +144,6 @@
   transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
-.grid-demo__sort-button:hover {
-  color: rgba(0, 0, 0, 0.82);
-  background: rgba(0, 127, 134, 0.08);
-}
-
-.grid-demo__sort-button:focus-visible {
-  outline: 2px solid rgba(0, 127, 134, 0.35);
-  outline-offset: 2px;
-  color: rgba(0, 0, 0, 0.82);
-  background: rgba(0, 127, 134, 0.1);
-}
-
 .grid-demo__sort-button--active {
   color: rgba(0, 0, 0, 0.88);
   background: rgba(0, 127, 134, 0.12);
@@ -167,34 +157,30 @@
   transition: color 0.15s ease, transform 0.15s ease;
 }
 
-.grid-demo__sort-svg.is-active {
-  color: var(--brand);
-}
-
-.grid-demo__sort-button:hover .grid-demo__sort-svg,
-.grid-demo__sort-button:focus-visible .grid-demo__sort-svg {
-  transform: scale(1.08);
-}
-
+/* 4. MODAL DE COLUNAS
+   ========================================================================== */
 .grid-demo__modal-backdrop {
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
   overflow-y: auto;
-  padding: 24px 16px;
+  padding: 16px;
   z-index: 60;
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(2px);
 }
 
 .grid-demo__modal {
-  width: min(420px, calc(100vw - 32px));
-  max-height: min(80vh, 720px);
+  width: min(380px, calc(100vw - 24px));
+  max-height: min(88vh, 760px);
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
   background: #fff;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
 }
 
 .grid-demo__modal-header,
@@ -206,134 +192,185 @@
 }
 
 .grid-demo__modal-header {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
 }
 
 .grid-demo__modal-header strong {
-  font-size: 1rem;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
-.grid-demo__modal-close {
-  color: #666;
-  font-size: 1rem;
-  background: transparent;
-  cursor: pointer;
+.grid-demo__modal-footer {
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
 }
 
 .grid-demo__modal-body {
   display: grid;
-  gap: 12px;
-  padding: 18px 20px;
+  gap: 8px;
+  padding: 12px 14px;
   overflow-y: auto;
   min-height: 0;
+  background: #fff;
+}
+
+.grid-demo__modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 999px;
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.grid-demo__modal-close:hover {
+  transform: none;
+  color: #0a9396;
+  border-color: rgba(10, 147, 150, 0.28);
+  background: #f8fafc;
 }
 
 .grid-demo__modal-option {
-  display: flex;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
-  font-size: 0.95rem;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  color: #1e293b;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.grid-demo__modal-option:hover {
+  border-color: rgba(10, 147, 150, 0.24);
+  background: #f8fafc;
 }
 
 .grid-demo__modal-option input {
   width: 16px;
   height: 16px;
-  accent-color: var(--brand);
+  margin: 0;
+  accent-color: #0a9396;
 }
 
-.grid-demo__modal-hint {
-  padding: 0 20px 16px;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.grid-demo__modal-footer {
-  flex-shrink: 0;
-  justify-content: flex-end;
-  gap: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.grid-demo__modal-header,
-.grid-demo__modal-hint {
-  flex-shrink: 0;
+.grid-demo__modal-option span {
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.2;
 }
 
 .grid-demo__modal-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
-  padding: 0 16px;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  min-width: 92px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 0.85rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
   cursor: pointer;
+  transition:
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.grid-demo__modal-button:hover {
+  transform: none;
 }
 
 .grid-demo__modal-button--ghost {
-  color: #4f4f4f;
+  color: #334155;
+  border-color: rgba(15, 23, 42, 0.12);
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.14);
+}
+
+.grid-demo__modal-button--ghost:hover {
+  border-color: rgba(10, 147, 150, 0.34);
+  color: #0f172a;
+  background: #f8fafc;
 }
 
 .grid-demo__modal-button--primary {
   color: #fff;
-  background: var(--brand);
+  background: linear-gradient(135deg, #0a9396 0%, #005f73 100%);
+  box-shadow: 0 8px 18px rgba(0, 95, 115, 0.18);
 }
 
-/* Mantem o estilo base dos cards de filtro usados nas telas com grade. */
+.grid-demo__modal-button--primary:hover {
+  box-shadow: 0 10px 20px rgba(0, 95, 115, 0.22);
+}
+
+/* 5. CARD DE FILTROS (AJUSTADO PARA CONSISTÊNCIA)
+   ========================================================================== */
 .filters-card {
   display: grid;
-  gap: 16px;
-  min-height: 118px;
-  padding: 14px 18px 16px 14px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
+  gap: 18px; /* Ajustado para bater com o gap da tabela */
+  padding: 24px;
   background: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  
+  /* A sombra exata que você encontrou na inspeção */
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  
+  /* Garantir que não haja altura mínima forçando o esmagamento */
+  min-height: auto;
 }
 
 .filters-card__header {
+  margin-bottom: 12px; /* Aumentado de 4px para 12px */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
 }
 
 .filters-card__header strong {
-  font-size: 0.96rem;
-  font-weight: 700;
+  /* Ajuste leve para o título ficar imponente como o da tabela */
+  font-size: 1.15rem; 
+  color: #1e293b; /* Tom de slate para combinar com a sombra */
 }
 
-.filters-card__toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  margin-top: -2px;
-  color: #5f6368;
-  cursor: pointer;
-  background: transparent;
-}
-
-.filters-card__toggle svg {
-  width: 18px;
-  height: 18px;
-}
-
+/* Ajuste nos campos para respeitar o novo gap */
 .filters-card__fields {
   display: flex;
-  gap: 16px;
+  gap: 18px; 
   flex-wrap: wrap;
+  align-items: flex-end;
 }
-
 .filters-card__field {
   position: relative;
   display: block;
-  min-width: 0;
-  width: 270px;
+  flex: 1;
+  min-width: 260px; /* Levemente menor para caber melhor em grids */
+  max-width: 400px;
 }
 
 .filters-card__field-label {
@@ -342,43 +379,50 @@
   left: 11px;
   z-index: 1;
   padding: 0 5px;
-  color: rgba(0, 0, 0, 0.55);
+  color: rgba(0, 0, 0, 0.6);
   font-size: 0.76rem;
+  font-weight: 600;
   line-height: 1;
   background: #fff;
 }
 
-.filters-card__input-wrap {
-  position: relative;
+.filters-card__input-wrap input,
+.tce-select--filter {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px 0 42px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
+  color: rgba(0, 0, 0, 0.8);
+  font-size: 0.95rem;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.filters-card__input-wrap input:focus {
+  border-color: var(--brand);
+  outline: none;
+}
+
+.filters-card__input-wrap select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.filters-card__input-wrap select:focus,
+.tce-select--filter:focus {
+  border-color: var(--brand);
+  outline: none;
 }
 
 .filters-card__input-icon {
   position: absolute;
   top: 50%;
-  left: 13px;
+  left: 14px;
   width: 18px;
   height: 18px;
   color: #757575;
   transform: translateY(-50%);
-}
-
-.filters-card__input-icon svg {
-  display: block;
-  width: 18px;
-  height: 18px;
-}
-
-.filters-card__input-wrap input {
-  width: 100%;
-  min-height: 50px;
-  padding: 0 14px 0 42px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  color: rgba(0, 0, 0, 0.72);
-  font-size: 0.95rem;
-  background: #fff;
-}
-
-.filters-card__input-wrap input::placeholder {
-  color: rgba(0, 0, 0, 0.46);
+  pointer-events: none;
 }

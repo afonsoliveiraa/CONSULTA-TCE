@@ -1,6 +1,16 @@
 import { type FunctionalComponent } from "preact";
 import { MainLayout, ToastViewport } from "./components";
-import { BiddingQueryPage, ContractQueryPage, HomePage, NotFoundPage, TceApiPage, UploadHistoryPage, VehicleQueryPage } from "./pages";
+// Adicione a AnalysisNEPage no import das páginas
+import { 
+  BiddingQueryPage, 
+  ContractQueryPage, 
+  HomePage, 
+  NotFoundPage, 
+  TceApiPage, 
+  UploadHistoryPage, 
+  VehicleQueryPage,
+  AnalysisNEPage 
+} from "./pages";
 import { resolveAppRoute } from "./routes/appRoutes";
 
 export const App: FunctionalComponent = () => {
@@ -14,7 +24,8 @@ export const App: FunctionalComponent = () => {
           currentPage.key === "consulta" ||
           currentPage.key === "consulta-licitacao" ||
           currentPage.key === "consulta-veiculo" ||
-          currentPage.key === "tce-api"
+          currentPage.key === "tce-api" ||
+          currentPage.key === "analyses-ne" // Adicionado aqui para aplicar o estilo de consulta
             ? " contracts-page--consulta"
             : ""
         }`}
@@ -25,6 +36,10 @@ export const App: FunctionalComponent = () => {
         {currentPage.key === "consulta-licitacao" ? <BiddingQueryPage /> : null}
         {currentPage.key === "consulta-veiculo" ? <VehicleQueryPage /> : null}
         {currentPage.key === "tce-api" ? <TceApiPage /> : null}
+        
+        {/* Nova rota adicionada aqui */}
+        {currentPage.key === "analyses-ne" ? <AnalysisNEPage /> : null}
+        
         {currentPage.key === "not-found" ? <NotFoundPage /> : null}
       </section>
       <ToastViewport />

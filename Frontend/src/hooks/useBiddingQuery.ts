@@ -1,13 +1,16 @@
+// frontend/src/hooks/useBiddingQuery.ts
+
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { sortCollectionByField, type SortDirection } from "../lib/sort";
-import { buscarLicitacoes } from "../services/biddingsApi";
-import { fetchImportedMunicipalities } from "../services/tceApi";
+// Importando as funções do seu novo service de licitações
+import { buscarLicitacoes, getMunicipiosLicitacoes } from "../services/biddingsApi";
 import { biddingColumns } from "../pages/biddings/biddingQuery.constants";
 import type { Bidding } from "../types/bidding";
 import type { BiddingColumnId } from "../pages/biddings/biddingQuery.types";
 import type { TceMunicipalityOption } from "../types/tce";
 
 export function useBiddingQuery() {
+  // --- Estados de Dados ---
   const [licitacoes, setLicitacoes] = useState<Bidding[]>([]);
   const [municipios, setMunicipios] = useState<TceMunicipalityOption[]>([]);
   const [numeroProcesso, setNumeroProcesso] = useState("");
@@ -15,23 +18,41 @@ export function useBiddingQuery() {
   const [quickSearch, setQuickSearch] = useState("");
   const [sortColumnId, setSortColumnId] = useState<BiddingColumnId>("numero_processo");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  // --- Estados de Colunas ---
   const [columns, setColumns] = useState(biddingColumns);
   const [draggingColumnId, setDraggingColumnId] = useState<BiddingColumnId | null>(null);
   const [dropTargetColumnId, setDropTargetColumnId] = useState<BiddingColumnId | null>(null);
+
+  // --- Estados de Paginação ---
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+
+  // --- Estados de UI ---
   const [carregandoConsulta, setCarregandoConsulta] = useState(false);
   const [erroConsulta, setErroConsulta] = useState<string | null>(null);
   const [mensagemConsulta, setMensagemConsulta] = useState("");
   const [showColumnModal, setShowColumnModal] = useState(false);
 
+  // --- Efeito para carregar municípios importados (Filtros) ---
   useEffect(() => {
     const carregarMunicipios = async () => {
       try {
-        const response = await fetchImportedMunicipalities("biddings");
-        setMunicipios(response);
-      } catch {
+        // Busca a lista de strings (códigos) do Rails
+        const codigos = await getMunicipiosLicitacoes();
+        
+        // Mapeia para o formato de objeto que o Select espera, satisfazendo a interface TceMunicipalityOption
+        const opcoes: TceMunicipalityOption[] = codigos.map((codigo) => ({
+          label: codigo,
+          value: codigo,
+          code: codigo,
+          name: codigo,
+        }));
+
+        setMunicipios(opcoes);
+      } catch (error) {
+        console.error("Erro ao carregar municípios de licitações:", error);
         setMunicipios([]);
       }
     };
@@ -39,36 +60,43 @@ export function useBiddingQuery() {
     carregarMunicipios();
   }, []);
 
+  // --- Lógica de Colunas Visíveis ---
   const visibleColumns = useMemo(() => columns.filter((column) => column.active), [columns]);
 
-  // A busca local replica o comportamento da consulta de contratos para manter a UX consistente.
+  // --- Lógica de Filtro Local e Ordenação ---
   const filteredLicitacoes = useMemo(() => {
     const normalizedSearch = quickSearch.toLowerCase();
     const normalizedItems = !quickSearch.trim()
       ? licitacoes
       : licitacoes.filter((licitacao) =>
-          Object.values(licitacao).some((value) => String(value).toLowerCase().includes(normalizedSearch)),
+          Object.values(licitacao).some((value) => 
+            String(value).toLowerCase().includes(normalizedSearch)
+          ),
         );
 
+    // Casting duplo para evitar erro de overlap do TypeScript
     return sortCollectionByField(
       normalizedItems as unknown as Record<string, unknown>[],
       sortColumnId,
       sortDirection,
-    ) as Bidding[];
+    ) as unknown as Bidding[];
   }, [licitacoes, quickSearch, sortColumnId, sortDirection]);
 
+  // --- Funções de Busca API ---
   const carregarDados = useCallback(
     async (page: number) => {
       setCarregandoConsulta(true);
       setErroConsulta(null);
 
       try {
+        // Envia o numeroProcesso e o codigoMunicipio selecionado para o Rails
         const response = await buscarLicitacoes(numeroProcesso, codigoMunicipio, page);
 
         setLicitacoes(response.data || []);
         setCurrentPage(response.pagination.page);
         setTotalItems(response.pagination.count);
         setTotalPages(response.pagination.last);
+
         setMensagemConsulta(
           numeroProcesso || codigoMunicipio
             ? `${response.pagination.count} resultados encontrados.`
@@ -105,7 +133,9 @@ export function useBiddingQuery() {
   };
 
   const setColumnVisibility = (columnId: string, checked: boolean) => {
-    setColumns((current) => current.map((column) => (column.id === columnId ? { ...column, active: checked } : column)));
+    setColumns((current) => 
+      current.map((column) => (column.id === columnId ? { ...column, active: checked } : column))
+    );
   };
 
   const handleColumnDrop = (targetColumnId: BiddingColumnId) => {

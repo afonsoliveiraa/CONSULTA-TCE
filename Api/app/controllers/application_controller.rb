@@ -1,6 +1,6 @@
 class ApplicationController < ActionController::API
   # O callback que o Rails chama automaticamente antes de cada action
-  before_action :authenticate_api_key!
+  # before_action :authenticate_api_key!
 
   include Pagy::Method
 

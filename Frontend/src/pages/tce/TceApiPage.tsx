@@ -1,369 +1,102 @@
-import { type FunctionalComponent, Fragment } from "preact";
-import { useEffect, useRef } from "preact/hooks";
-import { ColumnsIcon, DownloadIcon, SearchIcon, SortIcon } from "../../components/GridIcons";
+import { type FunctionalComponent } from "preact";
 import { useTceQuery } from "../../hooks/useTceQuery";
-import { showToast } from "../../lib/toast";
 import { TceColumnsModal } from "./components/TceColumnsModal";
-import { formatEndpointName, formatTceValue } from "./tcePresentation";
+import { TceFiltersCard } from "./components/TceFiltersCard";
+import { TceResultsCard } from "./components/TceResultsCard";
+import { TceTopbar } from "./components/TceTopbar";
 
-// Materializa a tela da API TCE no mesmo fluxo visual da consulta de contratos.
 export const TceApiPage: FunctionalComponent = () => {
   const {
-    endpoints,
     municipalities,
-    activeEndpoint,
-    selectedMunicipality,
-    selectedEndpointKey,
+    endpoints,
+    selectedPath,
+    setSelectedPath,
     selectedMunicipalityCode,
-    requiredFields,
-    optionalFields,
+    setSelectedMunicipalityCode,
+    endpointSummary,
+    dynamicParameters,
     formValues,
-    result,
-    filteredItems,
-    quickSearch,
-    loadingCatalog,
     loadingQuery,
-    errorMessage,
-    successMessage,
-    showColumnModal,
+    errorQuery,
+    messageQuery,
+    result,
+    quickSearch,
     columns,
+    visibleColumns,
+    filteredItems,
+    showColumnModal,
+    dropTargetColumnId,
     sortColumnId,
     sortDirection,
-    visibleColumns,
-    dropTargetColumnId,
-    setSelectedMunicipalityCode,
-    setQuickSearch,
+    selectedEndpoint,
     setFieldValue,
+    setQuickSearch,
     setShowColumnModal,
     setDraggingColumnId,
     setDropTargetColumnId,
     setColumnVisibility,
-    handleEndpointChange,
+    handleSubmit,
     handleSortChange,
     handleColumnDrop,
-    handleSubmit,
-    handlePageChange,
     handleExportCsv,
   } = useTceQuery();
-  const previousEndpointKeyRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (successMessage) {
-      showToast({ message: successMessage, tone: "success" });
-    }
-  }, [successMessage]);
-
-  useEffect(() => {
-    if (errorMessage) {
-      showToast({ message: errorMessage, tone: "error" });
-    }
-  }, [errorMessage]);
-
-  useEffect(() => {
-    if (!activeEndpoint) {
-      previousEndpointKeyRef.current = null;
-      return;
-    }
-
-    if (previousEndpointKeyRef.current === activeEndpoint.key) {
-      return;
-    }
-
-    previousEndpointKeyRef.current = activeEndpoint.key;
-
-    if (optionalFields.length === 0) {
-      showToast({
-        message: `O assunto "${formatEndpointName(activeEndpoint)}" nao possui campos opcionais adicionais.`,
-        tone: "neutral",
-      });
-      return;
-    }
-
-    showToast({
-      message: `Assunto "${formatEndpointName(activeEndpoint)}" carregado com ${optionalFields.length} filtro(s) opcional(is).`,
-      tone: "neutral",
-    });
-  }, [activeEndpoint, optionalFields]);
-
-  const renderField = (fieldName: string, fieldLabel: string, hint?: string, type = "text") => (
-    <label key={fieldName} class="filters-card__field tce-field">
-      <span class="filters-card__field-label">{fieldLabel}</span>
-      <div class="filters-card__input-wrap">
-        <span class="filters-card__input-icon" aria-hidden="true">
-          <SearchIcon />
-        </span>
-        <input
-          type={type}
-          value={formValues[fieldName] ?? ""}
-          onInput={(event) => setFieldValue(fieldName, event.currentTarget.value)}
-          placeholder={type === "date" ? undefined : `Preencha ${fieldLabel.toLowerCase()}`}
-        />
-      </div>
-      {hint ? <small class="tce-field__hint">{hint}</small> : null}
-    </label>
-  );
-
-  const renderEndpointField = (field: {
-    name: string;
-    label: string;
-    description?: string;
-    type: string;
-  }) => {
-    if (field.type === "date") {
-      return (
-        <Fragment key={field.name}>
-          {renderField(
-            `${field.name}_inicio`,
-            `${field.label} inicial`,
-            `Informe a data inicial para ${field.label.toLowerCase()}.`,
-            "date",
-          )}
-          {renderField(
-            `${field.name}_fim`,
-            `${field.label} final`,
-            "Se preencher as duas datas, a busca sera enviada como intervalo.",
-            "date",
-          )}
-        </Fragment>
-      );
-    }
-
-    return renderField(
-      field.name,
-      field.label,
-      field.description,
-      field.type === "number" ? "number" : "text",
-    );
-  };
 
   return (
     <>
-      <div class="contracts-topbar">
-        <div class="contracts-breadcrumbs">
-          <span>Consultas</span>
-          <span>&rsaquo;</span>
-          <strong>API TCE</strong>
-        </div>
+      <TceTopbar
+      />
 
-        <div class="contracts-steps" aria-label="Etapas">
-          <div class="contracts-step">
-            <span aria-hidden="true">&#10003;</span>
-            <strong>{selectedMunicipality?.name ?? "Municipio"}</strong>
-          </div>
-          <div class="contracts-step">
-            <span aria-hidden="true">&#10003;</span>
-            <strong>{activeEndpoint?.category ?? "Assunto"}</strong>
-          </div>
-          <div class="contracts-step">
-            <span aria-hidden="true">&#10003;</span>
-            <strong>{result ? `${result.pagination.totalItems} registros` : "Consulta"}</strong>
-          </div>
-        </div>
-      </div>
+      <TceFiltersCard
+        municipalities={municipalities}
+        endpoints={endpoints}
+        selectedMunicipalityCode={selectedMunicipalityCode}
+        selectedPath={selectedPath}
+        endpointSummary={endpointSummary}
+        dynamicParameters={dynamicParameters}
+        formValues={formValues}
+        loadingQuery={loadingQuery}
+        messageQuery={messageQuery}
+        errorQuery={errorQuery}
+        onMunicipalityChange={setSelectedMunicipalityCode}
+        onPathChange={setSelectedPath}
+        onFieldChange={setFieldValue}
+        onSubmit={handleSubmit}
+      />
 
-      <form class="contracts-filters-form" onSubmit={handleSubmit}>
-        <article class="filters-card contracts-filters-card contracts-filters-card--standalone">
-          <div class="filters-card__header">
-            <strong>Campos obrigatorios da consulta</strong>
-          </div>
-
-          <div class="filters-card__fields tce-fields-grid">
-            <label class="filters-card__field tce-field">
-              <span class="filters-card__field-label">Municipio</span>
-              <div class="filters-card__input-wrap">
-                <select
-                  class="tce-select tce-select--filter"
-                  value={selectedMunicipalityCode}
-                  onChange={(event) => setSelectedMunicipalityCode(event.currentTarget.value)}
-                  disabled={loadingCatalog}
-                >
-                  <option value="">Selecione um municipio</option>
-                  {municipalities.map((municipality) => (
-                    <option key={municipality.code} value={municipality.code}>
-                      {municipality.name} ({municipality.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </label>
-
-            <label class="filters-card__field tce-field">
-              <span class="filters-card__field-label">Assunto</span>
-              <div class="filters-card__input-wrap">
-                <select
-                  class="tce-select tce-select--filter"
-                  value={selectedEndpointKey}
-                  onChange={(event) => handleEndpointChange(event.currentTarget.value)}
-                  disabled={loadingCatalog || endpoints.length === 0}
-                >
-                  {endpoints.map((endpoint) => (
-                    <option key={endpoint.key} value={endpoint.key}>
-                      {formatEndpointName(endpoint)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </label>
-
-            {requiredFields.map((field) => renderEndpointField(field))}
-          </div>
-        </article>
-
-        <article class="filters-card contracts-filters-card contracts-filters-card--standalone">
-          <div class="filters-card__header">
-            <strong>Campos opcionais da consulta</strong>
-          </div>
-
-          <div class="filters-card__fields tce-fields-grid tce-fields-grid--with-action">
-            {optionalFields.length > 0 ? optionalFields.map((field) => renderEndpointField(field)) : null}
-
-            <div class="tce-filter-action">
-              <button
-                class="contracts-button contracts-button--secondary contracts-button--filter"
-                type="submit"
-                disabled={loadingCatalog || loadingQuery}
-              >
-                {loadingQuery ? "Buscando..." : "Buscar dados"}
-              </button>
-            </div>
-          </div>
-        </article>
-      </form>
-
-      <article class="contracts-results contracts-results--consulta">
-        <div class="grid-demo__toolbar contracts-results__toolbar">
-          <div class="grid-demo__toolbar-buttons">
-            <button class="grid-demo__text-button" type="button" onClick={() => setShowColumnModal(true)}>
-              <span class="grid-demo__toolbar-icon contracts-results__action-icon" aria-hidden="true">
-                <ColumnsIcon />
-              </span>
-              Colunas
-            </button>
-
-            <button class="grid-demo__text-button" type="button" onClick={handleExportCsv}>
-              <span class="grid-demo__toolbar-icon contracts-results__action-icon" aria-hidden="true">
-                <DownloadIcon />
-              </span>
-              Exportar
-            </button>
-          </div>
-
-          <div class="grid-demo__toolbar-actions">
-            <label class="grid-demo__search grid-demo__search--compact">
-              <div class="grid-demo__search-field">
-                <input
-                  type="text"
-                  value={quickSearch}
-                  onInput={(event) => setQuickSearch(event.currentTarget.value)}
-                  placeholder="Busque em qualquer campo"
-                  disabled={!result}
-                />
-                <span class="grid-demo__search-icon" aria-hidden="true">
-                  <SearchIcon />
-                </span>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <div class="contracts-table-wrap">
-          <table class="contracts-table">
-            <thead>
-              <tr>
-                {visibleColumns.map((column) => (
-                  <th
-                    key={column.id}
-                    class={`grid-demo__head-cell${dropTargetColumnId === column.id ? " is-drop-target" : ""}`}
-                    draggable
-                    onDragStart={() => setDraggingColumnId(column.id)}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      setDropTargetColumnId(column.id);
-                    }}
-                    onDragLeave={() => {
-                      if (dropTargetColumnId === column.id) {
-                        setDropTargetColumnId(null);
-                      }
-                    }}
-                    onDrop={() => handleColumnDrop(column.id)}
-                    onDragEnd={() => {
-                      setDraggingColumnId(null);
-                      setDropTargetColumnId(null);
-                    }}
-                  >
-                    <button
-                      class={`grid-demo__sort-button${sortColumnId === column.id ? " grid-demo__sort-button--active" : ""}`}
-                      type="button"
-                      onClick={() => handleSortChange(column.id)}
-                    >
-                      <span>{column.label}</span>
-                      <SortIcon
-                        active={sortColumnId === column.id}
-                        direction={sortColumnId === column.id ? sortDirection : "asc"}
-                      />
-                    </button>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {result && filteredItems.length > 0 ? (
-                filteredItems.map((item, rowIndex) => (
-                  <tr key={`${rowIndex}-${result.endpointKey}`}>
-                    {visibleColumns.map((column) => (
-                      <td key={column.id}>{formatTceValue(column.id, item[column.id])}</td>
-                    ))}
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td class="contracts-table__empty-cell" colSpan={Math.max(visibleColumns.length, 1)}>
-                    {!result
-                      ? "Preencha os filtros e clique em buscar para carregar os dados na grade."
-                      : "Nenhum registro corresponde aos filtros aplicados."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {result ? (
-          <div class="grid-demo__toolbar contracts-results__toolbar contracts-results__toolbar--pagination">
-            <div class="grid-demo__toolbar-buttons">
-              <button
-                class="grid-demo__text-button"
-                type="button"
-                disabled={loadingQuery || result.pagination.page <= 1}
-                onClick={() => handlePageChange(result.pagination.page - 1)}
-              >
-                Anterior
-              </button>
-
-              <button
-                class="grid-demo__text-button"
-                type="button"
-                disabled={
-                  loadingQuery ||
-                  (!result.pagination.hasMorePages &&
-                    result.pagination.totalPages > 0 &&
-                    result.pagination.page >= result.pagination.totalPages)
-                }
-                onClick={() => handlePageChange(result.pagination.page + 1)}
-              >
-                Proxima
-              </button>
-            </div>
-
-            <div class="grid-demo__toolbar-actions">
-              <span>
-                Pagina {result.pagination.page} de {Math.max(result.pagination.totalPages, 1)} •{" "}
-                {result.pagination.totalItems} registros
-              </span>
-            </div>
-          </div>
-        ) : null}
-      </article>
+      <TceResultsCard
+        endpointLabel={selectedEndpoint?.label ?? "Consulta"}
+        endpointPath={selectedPath}
+        sourceUrl={result?.source_url ?? ""}
+        loadingQuery={loadingQuery}
+        messageQuery={messageQuery}
+        errorQuery={errorQuery}
+        quickSearch={quickSearch}
+        totalItems={Number(result?.metadata?.total ?? result?.metadata?.length ?? result?.data.length ?? 0)}
+        visibleColumns={visibleColumns}
+        filteredItems={filteredItems}
+        sortColumnId={sortColumnId}
+        sortDirection={sortDirection}
+        dropTargetColumnId={dropTargetColumnId}
+        onQuickSearchChange={setQuickSearch}
+        onShowColumnModal={() => setShowColumnModal(true)}
+        onSortChange={handleSortChange}
+        onDragStart={setDraggingColumnId}
+        onDragOver={(event, columnId) => {
+          event.preventDefault();
+          setDropTargetColumnId(columnId);
+        }}
+        onDragLeave={(columnId) => {
+          if (dropTargetColumnId === columnId) {
+            setDropTargetColumnId(null);
+          }
+        }}
+        onDrop={handleColumnDrop}
+        onDragEnd={() => {
+          setDraggingColumnId(null);
+          setDropTargetColumnId(null);
+        }}
+        onExportCsv={handleExportCsv}
+      />
 
       {showColumnModal ? (
         <TceColumnsModal

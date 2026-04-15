@@ -3,8 +3,6 @@ import { useVehicleQuery } from "../../hooks/useVehicleQuery";
 import { VehicleColumnsModal } from "./components/VehicleColumnsModal";
 import { VehicleFiltersCard } from "./components/VehicleFiltersCard";
 import { VehicleResultsCard } from "./components/VehicleResultsCard";
-import { VehiclesTopbar } from "./components/VehiclesTopbar";
-
 export const VehicleQueryPage: FunctionalComponent = () => {
   const {
     vehicles,
@@ -42,7 +40,13 @@ export const VehicleQueryPage: FunctionalComponent = () => {
 
   return (
     <>
-      <VehiclesTopbar currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} />
+      <div class="contracts-topbar">
+        <div class="contracts-breadcrumbs">
+          <span>Processos</span>
+          <span>&rsaquo;</span>
+          <strong>Veiculos</strong>
+        </div>
+      </div>
 
       <VehicleFiltersCard
         placaOuRenavam={placaOuRenavam}

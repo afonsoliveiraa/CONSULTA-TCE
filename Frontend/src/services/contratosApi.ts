@@ -115,3 +115,18 @@ export async function buscarContratos(
 
   return response.data;
 }
+
+/**
+ * Busca a lista de códigos de municípios que possuem contratos importados.
+ */
+export async function getMunicipiosImportados(): Promise<string[]> {
+  try {
+    const response = await api.get("/contracts/municipios-importados");
+    // Como o Rails retorna { municipios: [...] }, acessamos .municipios
+    return response.data?.municipios ?? [];
+  } catch (error) {
+    throw new Error(
+      extractApiErrorMessage(error, "Falha ao carregar a lista de municípios.")
+    );
+  }
+}

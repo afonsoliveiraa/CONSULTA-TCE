@@ -2,8 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "preact/hooks";
 import { sortCollectionByField, type SortDirection } from "../lib/sort";
-import { buscarContratos } from "../services/contratosApi";
-import { fetchImportedMunicipalities } from "../services/tceApi";
+import { buscarContratos, getMunicipiosImportados } from "../services/contratosApi";
 import { contratoColumns } from "../pages/contracts/contractQuery.constants";
 import type { Contrato } from "../types/contrato";
 import type { ContratoColumnId } from "../pages/contracts/contractQuery.types";
@@ -19,7 +18,7 @@ export function useContractQuery() {
   const [sortColumnId, setSortColumnId] = useState<ContratoColumnId>("numero_contrato");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  // --- Estados de Colunas (Usando suas constantes) ---
+  // --- Estados de Colunas ---
   const [columns, setColumns] = useState(contratoColumns);
   const [draggingColumnId, setDraggingColumnId] = useState<ContratoColumnId | null>(null);
   const [dropTargetColumnId, setDropTargetColumnId] = useState<ContratoColumnId | null>(null);
@@ -35,12 +34,23 @@ export function useContractQuery() {
   const [mensagemConsulta, setMensagemConsulta] = useState("");
   const [showColumnModal, setShowColumnModal] = useState(false);
 
+  // --- Efeito para carregar municípios (Filtros) ---
   useEffect(() => {
     const carregarMunicipios = async () => {
       try {
-        const response = await fetchImportedMunicipalities("contracts");
-        setMunicipios(response);
-      } catch {
+        const codigos = await getMunicipiosImportados();
+        
+        // Mapeia garantindo a presença de 'code' e 'name' exigidos pela interface
+        const opcoes: TceMunicipalityOption[] = codigos.map((codigo) => ({
+          label: codigo,
+          value: codigo,
+          code: codigo, // Propriedade exigida pelo tipo TceMunicipalityOption
+          name: codigo, // Propriedade exigida pelo tipo TceMunicipalityOption
+        }));
+
+        setMunicipios(opcoes);
+      } catch (err) {
+        console.error("Erro ao carregar municípios:", err);
         setMunicipios([]);
       }
     };
@@ -53,28 +63,30 @@ export function useContractQuery() {
     columns.filter((col) => col.active), 
   [columns]);
 
-  // --- Lógica de Filtro Local (Quick Search na Grade) ---
+  // --- Lógica de Filtro Local e Ordenação ---
   const filteredContratos = useMemo(() => {
     const normalizedContracts = !quickSearch.trim()
       ? contratos
       : contratos.filter((contrato) =>
-          Object.values(contrato).some((value) => String(value).toLowerCase().includes(quickSearch.toLowerCase()))
+          Object.values(contrato).some((value) => 
+            String(value).toLowerCase().includes(quickSearch.toLowerCase())
+          )
         );
 
+    // Casting duplo (as unknown as...) para contornar a rigidez do TS na ordenação
     return sortCollectionByField(
       normalizedContracts as unknown as Record<string, unknown>[],
       sortColumnId,
       sortDirection,
-    ) as Contrato[];
+    ) as unknown as Contrato[];
   }, [contratos, quickSearch, sortColumnId, sortDirection]);
 
-  // --- Funções de Busca ---
+  // --- Funções de Busca API ---
   const carregarDados = useCallback(async (page: number) => {
     setCarregandoConsulta(true);
     setErroConsulta(null);
 
     try {
-      // Ordem correta dos parâmetros conforme seu service: (numero, page)
       const response = await buscarContratos(numeroContrato, codigoMunicipio, page);
 
       setContratos(response.data || []);
@@ -107,15 +119,14 @@ export function useContractQuery() {
 
   const handleSortChange = (columnId: ContratoColumnId) => {
     if (sortColumnId === columnId) {
-      setSortDirection((currentDirection) => (currentDirection === "asc" ? "desc" : "asc"));
+      setSortDirection((curr) => (curr === "asc" ? "desc" : "asc"));
       return;
     }
-
     setSortColumnId(columnId);
     setSortDirection("asc");
   };
 
-  // --- Gestão de Colunas (Drag & Drop e Visibilidade) ---
+  // --- Gestão de Colunas (Drag & Drop) ---
   const setColumnVisibility = (columnId: string) => {
     setColumns((prev) =>
       prev.map((col) => (col.id === columnId ? { ...col, active: !col.active } : col))
@@ -140,39 +151,29 @@ export function useContractQuery() {
   };
 
   const handleExportCsv = () => {
-    console.log("Exportando contratos para CSV...");
-    // Implementar lógica de download se necessário
+    console.log("Exportando...");
   };
 
   return {
-    // Dados
     contratos,
     municipios,
     filteredContratos,
     numeroContrato,
     codigoMunicipio,
     quickSearch,
-    
-    // Status
     carregandoConsulta,
     erroConsulta,
     mensagemConsulta,
-    
-    // Paginação
     currentPage,
     totalItems,
     totalPages,
     pageSize: 20,
     sortColumnId,
     sortDirection,
-
-    // Colunas e Modal
     columns,
     visibleColumns,
     showColumnModal,
     dropTargetColumnId,
-    
-    // Setters
     setNumeroContrato,
     setCodigoMunicipio,
     setQuickSearch,
@@ -180,8 +181,6 @@ export function useContractQuery() {
     setDraggingColumnId,
     setDropTargetColumnId,
     setColumnVisibility,
-    
-    // Handlers
     handleBuscarContrato,
     handlePageChange,
     handleSortChange,

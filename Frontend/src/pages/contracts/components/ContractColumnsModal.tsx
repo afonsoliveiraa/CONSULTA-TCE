@@ -43,8 +43,6 @@ export const ContractColumnsModal: FunctionalComponent<ContractColumnsModalProps
         ))}
       </div>
 
-      <div class="grid-demo__modal-hint">Arraste os titulos da tabela para reordenar as colunas.</div>
-
       <div class="grid-demo__modal-footer">
         <button class="grid-demo__modal-button grid-demo__modal-button--ghost" type="button" onClick={onClose}>
           Fechar
