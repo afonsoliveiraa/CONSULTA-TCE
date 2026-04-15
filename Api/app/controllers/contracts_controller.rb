@@ -7,6 +7,9 @@ class ContractsController < ApplicationController
     scope = Contract.all
     # Filtra por município se o parâmetro estiver presente
     scope = scope.where(cod_municipio: params[:cod_municipio]) if params[:cod_municipio].present?
+
+    # Filtra por número do contrato se o parâmetro estiver presente
+    scope = scope.where(numero_contrato: params[:numero_contrato]) if params[:numero_contrato].present?
     
     @pagy, @contracts = pagy(scope)
     render_paginated(@pagy, @contracts)
@@ -27,22 +30,6 @@ class ContractsController < ApplicationController
       render json: { message: "#{files_count} contratos importados com sucesso." }, status: :created
     else
       render json: { message: "Nenhum contrato importado." }, status: :unprocessable_entity
-    end
-  end
-
-  # GET /contracts/numero/:numero_contrato
-  def show_by_numero_contrato
-    scope = Contract.where(numero_contrato: params[:numero_contrato])
-    
-    if params[:cod_municipio].present?
-      scope = scope.where(cod_municipio: params[:cod_municipio])
-    end
-
-    if scope.any?
-      @pagy, @contracts = pagy(scope)
-      render_paginated(@pagy, @contracts)
-    else
-      render json: { error: "Nenhum contrato encontrado" }, status: :not_found
     end
   end
 

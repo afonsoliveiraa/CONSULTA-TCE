@@ -2,7 +2,7 @@ Rails.application.routes.draw do
   resources :vehicles do
     collection do
       get 'municipios-importados', action: :show_municipios_importados
-      get 'placa-renavam/:numero', action: :show_by_placa_renavam
+      get 'placa-renavam/*numero', action: :show_by_placa_renavam, format: false
     end
   end
 
@@ -22,7 +22,7 @@ Rails.application.routes.draw do
   resources :biddings do  
     collection do
       # Isso gera: GET /biddings/numero/:numero_processo
-      get 'numero/:numero_processo', action: :show_by_numero_processo
+      get 'numero/*numero_processo', action: :show_by_numero_processo, format: false
       get 'municipios-importados', action: :show_municipios_importados
     end
   end
@@ -30,7 +30,6 @@ Rails.application.routes.draw do
   resources :contracts do
     collection do
       # Isso gera: GET /contracts/numero/:numero_contrato
-      get 'numero/:numero_contrato', action: :show_by_numero_contrato
       get 'municipios-importados', action: :show_municipios_importados
     end
   end
